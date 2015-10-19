@@ -1,0 +1,17 @@
+# m h  dom mon dow   command
+0 6 * * 5 /home/dwang/work/chn_similar_stks/cronjob/y_baidu
+0 7 * * 5 /home/dwang/work/chn_similar_stks/cronjob/y_eastmoney
+0 8 * * 5 /home/dwang/work/chn_similar_stks/cronjob/y_sina
+0 5 * * 1-5 /home/dwang/work/chn_similar_stks/cronjob/y_hexun_rank
+0 9 * * 1-5 /home/dwang/work/chn_similar_stks/cronjob/y_wearn_rank
+44 13 * * 5 source /home/dwang/.bashrc 2>/dev/null; /home/dwang/cvs_root/nipun_task/alphas/update_alpha.py --univ='npxchnpak' --freq='daily' --start_date='20050101' > /home/dwang/work/alpha_files/log/log.log
+0 19 * * 2-6 source /home/dwang/.bashrc 2>/dev/null; /home/dwang/work/jsf/code/downloader.py > /home/dwang/work/jsf/log/log.log
+0 15 * * * source /home/dwang/.bashrc 2>/dev/null; /home/dwang/work/HK_broker/kgi.py  --db
+5 15 * * * source /home/dwang/.bashrc 2>/dev/null; /home/dwang/work/HK_broker/poems1.py  --db
+10 15 * * * source /home/dwang/.bashrc 2>/dev/null; /home/dwang/work/HK_broker/poems2.py  --db
+15 15 * * * source /home/dwang/.bashrc 2>/dev/null; /home/dwang/work/HK_broker/citics.py  --db --forceall
+20 15 * * * source /home/dwang/.bashrc 2>/dev/null; /home/dwang/work/HK_broker/dbs.py  --db
+25 15 * * * source /home/dwang/.bashrc 2>/dev/null; /home/dwang/work/HK_broker/utrade.py  --db
+30 15 * * * source /home/dwang/.bashrc 2>/dev/null; /home/dwang/work/HK_broker/cpy.py  --db
+35 15 * * * source /home/dwang/.bashrc 2>/dev/null; /home/dwang/work/HK_broker/publicsec.py  --db
+40 15 * * 1-5 source /home/dwang/.bashrc 2>/dev/null; /home/dwang/work/HK_broker/abci.py  --db
