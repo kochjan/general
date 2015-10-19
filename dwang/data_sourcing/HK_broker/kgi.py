@@ -65,8 +65,7 @@ if __name__ == '__main__':
             obj = KGI(opts.stdout)
             obj.run_all(opts.db, opts.forceall)
         finally:
-            if opts.email:
-                obj.email()
+            if opts.email: obj.email()
             
 
         

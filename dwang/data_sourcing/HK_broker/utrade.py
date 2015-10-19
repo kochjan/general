@@ -16,7 +16,7 @@ class Utrade(WebScraper):
     def __gen_list__(self):
 
         base_url = 'http://www.utrade.com.hk/tc/research/technical-quantitative-analysis?page='
-        return [base_url+str(i) for i in xrange(1,25)]
+        return [base_url+str(i) for i in xrange(1,26)]
         
 
     def parse_page(self):
@@ -58,8 +58,7 @@ if __name__ == '__main__':
         obj = Utrade(opts.stdout)
         obj.run_all(opts.db, opts.forceall)
     finally:
-        if not opts.stdout:
-            obj.email()        
+        if opts.email: obj.email()        
             
 
         

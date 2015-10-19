@@ -57,8 +57,7 @@ if __name__ == '__main__':
         obj = Publicsec(opts.stdout)
         obj.run_all(opts.db, opts.forceall)
     finally:
-        if not opts.stdout:
-            obj.email()
+        if opts.email: obj.email()
                     
 
         
