@@ -16,7 +16,7 @@ class Utrade(WebScraper):
     def __gen_list__(self):
 
         base_url = 'http://www.utrade.com.hk/tc/research/technical-quantitative-analysis?page='
-        return [base_url+str(i) for i in xrange(1,26)]
+        return [base_url+str(i) for i in xrange(1,26+1)]
         
 
     def parse_page(self):
@@ -32,7 +32,8 @@ class Utrade(WebScraper):
                 ticker = re.search(u'[\(\uff08](.*)[\)\uff09]', text)
                 #import pdb;pdb.set_trace()
                 if ticker:
-                    ticker = filter(str.isdigit, str(ticker.groups()[0].strip()))
+                    ticker = ticker.groups()[0].strip()
+                    ticker = filter(ticker.__class__.isdigit, ticker)
                 if ticker:
                     recommendation = text.split('-')[-1]
                     tmp_l.append([datadate, ticker, 'recommendation', recommendation])

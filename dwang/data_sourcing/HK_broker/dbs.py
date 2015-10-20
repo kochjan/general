@@ -16,7 +16,7 @@ class Dbs(WebScraper):
     def __gen_list__(self):
 
         base_url = 'http://www.dbs.com.hk/treasures/aics/gridchild.page?country=hk&sector=all&recommentation=all&search=&start='
-        return [base_url+str(i) for i in xrange(1,4)]
+        return [base_url+str(i) for i in xrange(1,15+1)]
         
     ## def scrape_sig_page(self, i):
         
@@ -25,13 +25,13 @@ class Dbs(WebScraper):
 
     def parse_page(self):
 
-        rec_map = {'OW':'Overweight', 'N':'Neutral', 'UW':'Underweight'}
+        rec_map = {'OW':'Overweight', 'N':'Neutral', 'UW':'Underweight', 'FV': 'Fully Valued'}
         tmp_l = []
         s = BeautifulSoup(self.page_str)
         divs=s.findAll('div', {'class':"stocks-popover"})
         
         for div in divs:
-            ticker = div.find('span', {'class':"stock-code"}).text.replace('Stock Code:','').strip()
+            ticker = div.find('span', {'class':"stock-code"}).text.replace('Stock Code','').replace(':', '').replace(u'\xa0', '').strip()
             if 'HK' in ticker:
                 ticker = ticker.replace('HK','').replace('.', '')
             else:
