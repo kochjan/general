@@ -204,48 +204,43 @@ def parse_old(r):
 
 def downloader(all_list_dates_df, col_n, w2file = True, db = True, fromfilefirst=False, noparse=False):
 
-    errf = open('./data/errors.err', 'a')
-    try:
+    with open('./data/errors.err', 'a') as errf:
         for i in all_list_dates_df.iterrows():
+            try:
+                tmp_S = i[1]
+                fn = './data/'+tmp_S['symbol']+'_'+tmp_S['asOnDate']+'.txt'
+                check_web = True
+                ###########################
+                if fromfilefirst:#read from ./data/files
+                    if os.path.exists(fn):
+                        with open(fn, 'r') as f:
+                            r = f.read()
+                            check_web = False
 
-            tmp_S = i[1]
-            fn = './data/'+tmp_S['symbol']+'_'+tmp_S['asOnDate']+'.txt'
-            check_web = True
-            ###########################
-            if fromfilefirst:#read from ./data/files
-                if os.path.exists(fn):
-                    with open(fn, 'r') as f:
-                        r = f.read()
-                        check_web = False
-                        if 'nse symbol' not in r.lower():
-                            continue
-            ###########################
-            if (not fromfilefirst) or (check_web):# read from website
-                jsp_str = jsp_low_new if tmp_S['Pattern']=='New' else jsp_low_old
-                r = requests.post(base_url+'ShareholdingPattern/'+jsp_str, data={'ndsId':tmp_S['recordID'], 'symbol':tmp_S['symbol'], 'countStr':tmp_S['countString'], 'asOnDate':tmp_S['asOnDate'],'industry':tmp_S['Ind']}, timeout=30).content
-                print fn
-                print 'wait for 30s'
-                time.sleep(30)
+                ###########################
+                if (not fromfilefirst) or (check_web):# read from website
+                    jsp_str = jsp_low_new if tmp_S['Pattern']=='New' else jsp_low_old
+                    r = requests.post(base_url+'ShareholdingPattern/'+jsp_str, data={'ndsId':tmp_S['recordID'], 'symbol':tmp_S['symbol'], 'countStr':tmp_S['countString'], 'asOnDate':tmp_S['asOnDate'],'industry':tmp_S['Ind']}, timeout=30).content
+                    print fn
+                    print 'wait for 30s'
+                    time.sleep(30)
 
-                if 'nse symbol' not in r.lower():
-                    continue
+                    if w2file:
+                        with open(fn, 'w') as f:
+                            f.write(r)
+                ############################
+                if not noparse:
+                    if 'nse symbol' not in r.lower():
+                        raise Exception('nse symbol is not here')
+                    parse = parse_new if tmp_S['Pattern']=='New' else parse_old
+                    df = pd.DataFrame(parse(r), columns = col_n)
+                    df['last_modification'] = dt.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+                    if db:
+                        sql_io.write_frame(df, 'dwang..india_share', bulk='off', if_exists='append', unic=True)
 
-                if w2file:
-                    with open(fn, 'w') as f:
-                        f.write(r)
-            ############################
-            if not noparse:
-                parse = parse_new if tmp_S['Pattern']=='New' else parse_old
-                df = pd.DataFrame(parse(r), columns = col_n)
-                df['last_modification'] = dt.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-                if db:
-                    sql_io.write_frame(df, 'dwang..india_share', bulk='off', if_exists='append', unic=True)
-
-    except Exception,e:
-        errf.write(tmp_S['symbol']+'_'+tmp_S['asOnDate']+'\n')
-        #errf.write('\n---------------------------------------------------\n')
-    finally:
-        errf.close()
+            except Exception,e:
+                errf.write(tmp_S['symbol']+'_'+tmp_S['asOnDate']+'\n')
+                #errf.write('\n---------------------------------------------------\n')
         
 if __name__ == '__main__':
 
@@ -266,8 +261,9 @@ if __name__ == '__main__':
         for symb in all_df['symbol']:
             print "start %s --------------"%symb
             all_list_dates_df = all_dates(symb, rff=opts.fff) # all (name, date) combination
-            print 'wait for 20s'
-            time.sleep(20)
-            downloader(all_list_dates_df, col_n, fromfilefirst=opts.fff, noparse=opts.noparse)
+            if all_list_dates_df:
+                print 'wait for 20s'
+                time.sleep(20)
+                downloader(all_list_dates_df, col_n, fromfilefirst=opts.fff, noparse=opts.noparse)
             print "end %s --------------"%symb
     
