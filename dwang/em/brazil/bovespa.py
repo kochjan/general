@@ -8,6 +8,8 @@ import re
 import sys
 import time
 import os
+import sql_io
+import re
 
 s = requests.Session()
 
@@ -47,7 +49,7 @@ def downloadBTCDateRange(start, end):
     for d in pd.DateRange(start, end):
         addDateToPayload(d)
         req2 = s.post(BTCurl,headers=headers,data=payload)
-
+        
         res = req2.headers.get('content-disposition')
         if pd.isnull(res):
             print "no data on {}".format(d)
@@ -72,11 +74,13 @@ def downloadRLC():
     
     req3 = s.get(RLCurl)
     res = req3.headers.get('content-disposition')
+    
     if pd.isnull(res):
         print "no data on {}".format(d)
         return
     elif 'filename' in res:
-        filepath = '{}/RLC-RegisteredLoanContract/rlc.{:%Y%m%d}.txt'.format(outdir, dd.today())
+        filename = res.split('=')[1].split('.')[0]
+        filepath = '{}/RLC-RegisteredLoanContract/{}_{:%Y%m%d}.txt'.format(outdir, filename, dd.today())
         foldern = outdir+'/RLC-RegisteredLoanContract'
         if not os.path.exists(foldern):
             os.makedirs(foldern)
@@ -88,51 +92,96 @@ def downloadRLC():
 # getting historical 2 months
 # downloadBTCDateRange(dd(2015,7,11), dd(2015,8,1))
 
-def BTC_parser(fns):
+def BTC_parser(fns):#DBTC20151207.dat
 
     tmp_l = []
-    cols = ['registration_type', 'code', 'name', 'paper_type', 'isin', 'balance_paper', 'price', 'role', 'balance_real', 'reseva_booking']
+    cols = ['security_type', 'ticker', 'name', 'paper_type', 'isin', 'contract_balance', 'price', 'role', 'balance_real', 'datadate', 'reseve_booking']
     for fn in fns:
         with open(fn, 'r') as f:
             f_list = f.readlines()
         for l in f_list[1:-1]:
-            registration_type = l[0:2]
-            code = l[2:14]
-            name = l[14:26]
-            paper_type = l[26:29]
-            isin = l[29:41]
-            balance_paper = l[41:59]
-            price = l[59:77]
-            role = l[77:84]
-            balance_real = l[84:102]
-            reseva_booking = l[102:250]
+            security_type = l[0:2]#'01': equity; '02': fixed income
+            if (security_type=='01') or (security_type=='02'):
+                ticker = l[2:14]
+                name = l[14:26]
+                paper_type = l[26:29]
+                isin = l[29:41]
+                contract_balance = l[41:59]#balance of contract on paper: QUANTITY OF THE SUM TOTAL OF CONTRACTS OPEN IN DATE MOVEMENT
+                price = l[59:77]#price in the middle of data movement
+                role = l[77:84]#ROLE OF LISTING FACTOR
+                balance_real = l[84:102]#BALANCE OF CONTRACT IN REAL SUM OF VOLUME: SUM OF VOLUME IN REAL , THE CONTRACTS OPEN IN DATE MOVEMENT
+                reseve_booking = l[102:250]
+            else:
+                raise Exception('bad security_type')
 
-            tmp_l.append([k.strip() for k in [registration_type, code, name, paper_type, isin, balance_paper, price, role, balance_real, reseva_booking]])
+            datadate = re.findall('DBTC(\d*)\.', fn)[0]
+            tmp_l.append([k.strip() for k in [security_type, ticker, name, paper_type, isin, contract_balance, price, role, balance_real, datadate, reseve_booking]])
 
     df = pd.DataFrame(tmp_l, columns=cols)
+    
     return df
     
 
 def RLC_parser(fns):
 
     tmp_l = []
-    cols = ['registration_type', 'code', 'name', 'paper_type', 'isin', 'balance_paper', 'price', 'role', 'balance_real', 'reseva_booking']
+    cols = ['record_type', 'days', 'action', 'name', 'contract_num', 'shares', 'value', \
+            'min_rate_loan', 'avg_rate_loan', 'max_rate_loan', 'min_rate_borrow', 'avg_rate_borrow', \
+            'max_rate_borrow', 'datadate', 'reserve']
     for fn in fns:
         with open(fn, 'r') as f:
             f_list = f.readlines()
         for l in f_list[1:-1]:
-            registration_type = l[0:2]
-            action = l[2:22]
-            now = l[22:52]???stoped here
-            paper_type = l[26:29]
-            isin = l[29:41]
-            balance_paper = l[41:59]
-            price = l[59:77]
-            role = l[77:84]
-            balance_real = l[84:102]
-            reseva_booking = l[102:250]
-
-            tmp_l.append([k.strip() for k in [registration_type, code, name, paper_type, isin, balance_paper, price, role, balance_real, reseva_booking]])
+            record_type = l[0:2]
+            if (record_type=='01'):
+                action = l[2:22]
+                name = l[22:52]
+                contract_num = l[52:62]
+                shares = l[62:73]
+                value = l[73:93]
+                min_rate_loan = l[93:100]
+                avg_rate_loan = l[100:107]
+                max_rate_loan = l[107:114]
+                min_rate_borrow = l[114:121]
+                avg_rate_borrow = l[121:128]
+                max_rate_borrow = l[128:135]
+                reserve = l[135:160]
+                days = '1'
+            elif (record_type=='02'):
+                action = l[2:22]
+                name = l[22:52]
+                contract_num = l[52:62]
+                shares = l[62:73]
+                value = l[73:93]
+                avg_rate_loan = l[93:100]
+                avg_rate_borrow = l[100:107]
+                reserve = l[135:160]
+                min_rate_loan = ''
+                max_rate_loan = ''
+                min_rate_borrow = ''
+                max_rate_borrow = ''
+                days = '3'
+            elif (record_type=='03'):
+                action = l[2:22]
+                name = l[22:52]
+                contract_num = l[52:62]
+                shares = l[62:73]
+                value = l[73:93]
+                avg_rate_loan = l[93:100]
+                avg_rate_borrow = l[100:107]
+                reserve = l[135:160]
+                min_rate_loan = ''
+                max_rate_loan = ''
+                min_rate_borrow = ''
+                max_rate_borrow = ''
+                days = '15'
+            else:
+                raise Exception('bad security_type')
+            
+            datadate = re.findall('\_(\d*)\.', fn)[0]
+            tmp_l.append([k.strip() for k in [record_type, days, action, name, contract_num, shares, value, \
+            min_rate_loan, avg_rate_loan, max_rate_loan, min_rate_borrow, avg_rate_borrow, \
+            max_rate_borrow, datadate, reserve]])
 
     df = pd.DataFrame(tmp_l, columns=cols)
     return df
@@ -142,7 +191,9 @@ if __name__ == '__main__':
     print "processing {}".format(day)
     fns = downloadBTCDateRange(day, day)
     BTC_df = BTC_parser(fns)
+    sql_io.write_frame(BTC_df, 'dwang..brazil_bovespa_BTC', bulk='off', if_exists='append')
     # BTC available up to previous Friday?
 
     fn = downloadRLC()
-    RLC_df = RLC_parser(fn)
+    RLC_df = RLC_parser([fn])
+    sql_io.write_frame(RLC_df, 'dwang..brazil_bovespa_RLC', bulk='off', if_exists='append')
