@@ -37,7 +37,7 @@ import pandas
 import datetime
 from optparse import OptionParser
 
-sys.path.insert(0, '/home/dwang/git_root/')# record_alpha is not in nipun_shared yet, so use my local files first
+sys.path.insert(0, '/home/dwang/git_new/')# record_alpha is not in nipun_shared yet, so use my local files first
 import nipun_task.site_config as site_config
 import nipun_task.utility.record_alpha as ra
 
