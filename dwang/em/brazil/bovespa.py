@@ -10,10 +10,11 @@ import time
 import os
 import sql_io
 import re
+from nipun.mailer import mail_me
 
 s = requests.Session()
 
-outdir = './outputs'
+outdir = '/home/dwang/git_root/general/dwang/em/brazil/outputs/'
 urlbase = 'http://www.bmfbovespa.com.br/BancoTitulosBTC'
 BTCurl = urlbase + '/PosicoesEmAberto.aspx?Idioma=en-us'
 
@@ -55,12 +56,13 @@ def downloadBTCDateRange(start, end):
             print "no data on {}".format(d)
         elif 'filename' in res:
             filename = res.split('=')[1]
-    	    print filename
+            print filename
             filepath = '{}/BTC-OpenPositions/{}'.format(outdir,filename)
             foldern = outdir+'/BTC-OpenPositions'
             if not os.path.exists(foldern):
                 os.makedirs(foldern)
-            with open(filepath, "wb") as f:
+            print filepath
+            with open(filepath, 'wb') as f:
                 f.write(req2.content)
         # pause 5 secs
         fns.append(filepath)
@@ -178,7 +180,7 @@ def RLC_parser(fns):
             else:
                 raise Exception('bad security_type')
             
-            datadate = re.findall('\_(\d*)\.', fn)[0]
+            datadate = re.findall('[\_\.](\d*)\.', fn)[0]
             tmp_l.append([k.strip() for k in [record_type, days, action, name, contract_num, shares, value, \
             min_rate_loan, avg_rate_loan, max_rate_loan, min_rate_borrow, avg_rate_borrow, \
             max_rate_borrow, datadate, reserve]])
@@ -186,14 +188,37 @@ def RLC_parser(fns):
     df = pd.DataFrame(tmp_l, columns=cols)
     return df
 
+def process_all_hist_BTC(folder):
+
+    f_list = os.listdir(folder)
+    for fn in f_list:
+        print fn
+        BTC_df = BTC_parser([os.path.join(folder, fn)])
+        sql_io.write_frame(BTC_df, 'dwang..brazil_bovespa_BTC', bulk='off', if_exists='append')
+
+def process_all_hist_RLC(folder):
+
+    f_list = os.listdir(folder)
+    for fn in f_list:
+        try:
+            print fn
+            RLC_df = RLC_parser([os.path.join(folder, fn)])
+            sql_io.write_frame(RLC_df, 'dwang..brazil_bovespa_RLC', bulk='off', if_exists='append')
+        except Exception,e:
+            print fn+' has bad data'
+
 if __name__ == '__main__':
     day = dd.today() - pd.datetools.BDay(1)
     print "processing {}".format(day)
-    fns = downloadBTCDateRange(day, day)
-    BTC_df = BTC_parser(fns)
-    sql_io.write_frame(BTC_df, 'dwang..brazil_bovespa_BTC', bulk='off', if_exists='append')
-    # BTC available up to previous Friday?
-
-    fn = downloadRLC()
-    RLC_df = RLC_parser([fn])
-    sql_io.write_frame(RLC_df, 'dwang..brazil_bovespa_RLC', bulk='off', if_exists='append')
+    try:
+        fns = downloadBTCDateRange(day, day)
+        BTC_df = BTC_parser(fns)
+        sql_io.write_frame(BTC_df, 'dwang..brazil_bovespa_BTC', bulk='off', if_exists='append', unic=True)
+        # BTC available up to previous Friday?
+        
+        fn = downloadRLC()
+        RLC_df = RLC_parser([fn])
+        sql_io.write_frame(RLC_df, 'dwang..brazil_bovespa_RLC', bulk='off', if_exists='append', unic=True)
+        mail_me(['ding.wang@nipuncapital.com'], 'brazil bovespa dialy downloading is successful', 'check /home/dwang/git_root/general/dwang/em/brazil/log.log')
+    except Exception,e:
+        mail_me(['ding.wang@nipuncapital.com'], 'brazil bovespa dialy downloading has error', 'check /home/dwang/git_root/general/dwang/em/brazil/log.log')
