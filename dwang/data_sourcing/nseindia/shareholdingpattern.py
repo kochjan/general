@@ -257,7 +257,7 @@ if __name__ == '__main__':
     
     else:
 
-        all_df = all_comp_names(rff=opts.fff) # names for all companies
+        all_df = all_comp_names(rff=False) # names for all companies
         for symb in all_df['symbol']:
             print "start %s --------------"%symb
             all_list_dates_df = all_dates(symb, rff=opts.fff) # all (name, date) combination

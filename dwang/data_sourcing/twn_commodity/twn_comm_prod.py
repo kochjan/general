@@ -96,8 +96,8 @@ if __name__=='__main__':
     myparser.add_option('--endm', dest='endm', default=m_str)
     opts, _ = myparser.parse_args()
 
-    try:
-        run(opts.startm, opts.endm)
-    except Exception,e:
-        print m_str
-        print e
+    #try:
+    run(opts.startm, opts.endm)
+    #except Exception,e:
+        #print m_str
+        #print e

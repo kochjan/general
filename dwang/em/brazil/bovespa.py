@@ -11,6 +11,7 @@ import os
 import sql_io
 import re
 from nipun.mailer import mail_me
+import nipun.dbc as dbc
 
 s = requests.Session()
 
@@ -121,7 +122,7 @@ def BTC_parser(fns):#DBTC20151207.dat
 
     df = pd.DataFrame(tmp_l, columns=cols)
     
-    return df
+    return df, datadate
     
 
 def RLC_parser(fns):
@@ -193,7 +194,7 @@ def process_all_hist_BTC(folder):
     f_list = os.listdir(folder)
     for fn in f_list:
         print fn
-        BTC_df = BTC_parser([os.path.join(folder, fn)])
+        BTC_df, datadate = BTC_parser([os.path.join(folder, fn)])
         sql_io.write_frame(BTC_df, 'dwang..brazil_bovespa_BTC', bulk='off', if_exists='append')
 
 def process_all_hist_RLC(folder):
@@ -212,7 +213,13 @@ if __name__ == '__main__':
     print "processing {}".format(day)
     try:
         fns = downloadBTCDateRange(day, day)
-        BTC_df = BTC_parser(fns)
+        BTC_df, datadate = BTC_parser(fns)
+        
+        dbo = dbc.db(connect='qai')
+        sql_del = "delete from dwang..brazil_bovespa_BTC where datadate=%s"%datadate.strftime('%Y-%m-%d')
+        dbo.cursor.execute(sql_del)
+        dbo.commit()
+        
         sql_io.write_frame(BTC_df, 'dwang..brazil_bovespa_BTC', bulk='off', if_exists='append', unic=True)
         # BTC available up to previous Friday?
         
