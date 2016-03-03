@@ -216,7 +216,7 @@ if __name__ == '__main__':
         BTC_df, datadate = BTC_parser(fns)
         
         dbo = dbc.db(connect='qai')
-        sql_del = "delete from dwang..brazil_bovespa_BTC where datadate=%s"%datadate.strftime('%Y-%m-%d')
+        sql_del = "delete from dwang..brazil_bovespa_BTC where datadate=%s"%(datadate[:4]+'-'+datadate[4:6]+'-'+datadate[6:])
         dbo.cursor.execute(sql_del)
         dbo.commit()
         

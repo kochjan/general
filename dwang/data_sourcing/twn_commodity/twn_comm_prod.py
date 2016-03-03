@@ -78,7 +78,7 @@ def run(startm='199001', endm='201508'):
            'Direct Export Volume','Direct Export Value NT$ 1000',\
            'Inventory Volume', 'Inventory Value NT$ 1000', 'last_modification']], 'dwang..twn_comm_prod', if_exists='append', unic=True)
 
-        time.sleep(5)
+        time.sleep(10)
 
 if __name__=='__main__':
 
@@ -96,8 +96,8 @@ if __name__=='__main__':
     myparser.add_option('--endm', dest='endm', default=m_str)
     opts, _ = myparser.parse_args()
 
-    #try:
-    run(opts.startm, opts.endm)
-    #except Exception,e:
-        #print m_str
-        #print e
+    try:
+        run(opts.startm, opts.endm)
+    except Exception,e:
+        print m_str
+        print e

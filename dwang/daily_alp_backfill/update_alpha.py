@@ -40,11 +40,15 @@ from optparse import OptionParser
 sys.path.insert(0, '/home/dwang/git_new/')# record_alpha is not in nipun_shared yet, so use my local files first
 import nipun_task.site_config as site_config
 import nipun_task.utility.record_alpha as ra
+import nipun.dbc as dbc
+import re
+import nipun.cpa.load_barra as lb
 
-
+dbo = dbc.db(connect='qai')
 NCPUS = 6
 ALPHA_PATH = '/home/sil/production/production_signals/'
 #ALPHA_PATH = '/home/dwang/work/alpha_files/code/production_signals/'
+DIR = "/research/production_alphas/"
 
 def determine_alphas(univ, the_date, prev_date):
     '''
@@ -208,17 +212,17 @@ def requeue_alphas(univ, freq, max_n=None, alphas_i=None):
 
     global ALPHA_DIR, DEBUG_DIR
     td = datetime.datetime.today()
-    if freq=='daily':
-        ALPHA_DIR = '/research/production_alphas/daily/current/' 
-        DEBUG_DIR = '/research/production_alphas/daily/debug/'
+    ALPHA_DIR = '%(dir)s/%(freq)s/current/'%{'dir':DIR, 'freq':freq} 
+    DEBUG_DIR = '%(dir)s/%(freq)s/debug/'%{'dir':DIR, 'freq':freq}
+    if freq=='daily':    
         t_delta = pandas.datetools.day
         copy_dates = pandas.DateRange(td - pandas.datetools.week, td, offset=pandas.datetools.day) # copy .alp files for all dates in copy_dates
         the_date = td # determine_alphas
         prev_date = the_date - pandas.datetools.week # determine_alphas
         stop_date = td if opts.stop_date is None else opts.stop_date #in run_alpha
     elif freq=='monthly':
-        ALPHA_DIR = '/research/production_alphas/monthly/current/' 
-        DEBUG_DIR = '/research/production_alphas/monthly/debug/'
+        #ALPHA_DIR = '/research/production_alphas/monthly/current/' 
+        #DEBUG_DIR = '/research/production_alphas/monthly/debug/'
         t_delta = pandas.datetools.monthEnd
         copy_dates = [td-t_delta]#[td +datetime.timedelta(1)- t_delta] the latest monthend, not including td. copy .alp files for all dates in copy_dates
         the_date = td - t_delta
@@ -290,6 +294,84 @@ def requeue_alphas(univ, freq, max_n=None, alphas_i=None):
     ### all done
     return
 
+
+def backfill_b_alphas(weights_date=None, buckets=['analyst', 'fmom', 'industry', 'iu', 'quality', 'sentiment', 'special', 'value'], univ='npxchnpak', alpha='alpha_v5', startdate=datetime.datetime(2005,1,1), enddate=datetime.datetime.today(), model = 'ase1jpn'):
+    """
+    this function is to calculate bucket alphas based on the latest backfilled
+    raw alphas
+    """
+
+    if weights_date is None:
+        ctry_wt_df = dbo.query("select * from alphagen..country_wt__%s"%alpha, df=True)
+        alpha_wt_df = dbo.query("select * from alphagen..alpha_wt__%s"%alpha, df=True)
+    else:
+        ctry_wt_df = dbo.query("select * from production_reporting..country_wt_backup \
+        where cast(datadate AS date)='%(date)s' and alphagen_vers='%(alpha)s'"%{'alpha':alpha, 'date':weights_date}, df=True)
+        alpha_wt_df = dbo.query("select * from production_reporting..alpha_wt_backup \
+        where cast(datadate AS date)='%(date)s' and alphagen_vers='%(alpha)s'"%{'alpha':alpha, 'date':weights_date}, df=True)
+
+    ctry_wt_df = ctry_wt_df[['alpha_name', 'country', 'weight']]
+    alpha_wt_df = alpha_wt_df[['bucket_name', 'alpha_name']]
+    bucket_alpha_df = pandas.merge(alpha_wt_df, ctry_wt_df, on=['alpha_name'], how='left')
+
+    for date in pandas.DateRange(startdate, enddate, offset=pandas.datetools.day):
+        ctry_df = pandas.DataFrame(lb.loadrsk2(model, 'S', date, daily=True)['COUNTRY'])
+        univ_df = lb.load_production_universe(univ, date)
+        for bkt in buckets:
+            bkt_df = bucket_alpha_df[bucket_alpha_df['bucket_name']==bkt]#.drop(labels=['bucket_name'], axis=1)
+            bkt_df = bkt_df.pivot(index='country', columns='alpha_name', values='weight')
+            backfill_1b(date, bkt, bkt_df, ctry_df=ctry_df, univ_df=univ_df)
+
+def backfill_1b(date, bkt, bkt_df, univ='npxchnpak', alpha='alpha_v5', freq='daily', model = 'ase1jpn', ctry_df=None, univ_df=None):
+    """
+    backfill one bucket
+    """
+    print "backfill bucket %s for %s"%(bkt, date)
+    
+    date_str = date.strftime('%Y%m%d')
+    keep_alphas = bkt_df.abs().sum()
+    keep_alphas = keep_alphas[keep_alphas>0].index.tolist()
+    bkt_df = bkt_df[keep_alphas]
+    
+    ALPHA_DIR = '%(dir)s/%(freq)s/current/'%{'dir':DIR, 'freq':freq}
+    b_out_dir = "%s/%s/%s/"%(ALPHA_DIR, univ, 'b_'+bkt)
+
+    if not os.path.exists(b_out_dir):
+        os.makedirs(b_out_dir)
+
+    big_df = pandas.DataFrame()
+    for alpha in keep_alphas:
+        raw_alpha_dir = "%s/%s/%s/"%(ALPHA_DIR, univ, alpha)
+        fn = raw_alpha_dir+'%s_%s.alp'%(alpha, date_str)
+        if os.path.exists(fn):
+            tmp_df = pandas.read_csv(fn, header=None, names=['barrid', alpha], index_col=0)
+            big_df = big_df.join(tmp_df, how='outer')
+        else:
+            big_df[alpha] = None
+
+    #the v1 def. for bucket alphas
+    output_df = big_df.fillna(0).mean(axis=1)
+    output_df.to_csv('%(dir)s/b_%(bkt)s_%(date)s_v1.alp'%{'dir':b_out_dir, 'bkt':bkt, 'date':date_str})
+
+    #the v2 def.
+    #add country into big_df
+    if ctry_df is None:
+        ctry_df = pandas.DataFrame(lb.loadrsk2(model, 'S', date, daily=True)['COUNTRY'])
+    if univ_df is None:
+        univ_df = lb.load_production_universe(univ, date)
+    
+    big_df = big_df[big_df.index.isin(univ_df.index)]
+    big_df = big_df.join(ctry_df, how='left')
+
+    output_df2 = pandas.DataFrame()
+    for k,v in big_df.groupby('COUNTRY'):
+        if k in bkt_df.index:
+            keep_alphas = bkt_df.ix[k]
+            keep_alphas = keep_alphas[keep_alphas>0].index.tolist()
+            output_df2 = pandas.concat([output_df2, pandas.DataFrame(v[keep_alphas].fillna(0).mean(axis=1))])
+        
+    output_df2.to_csv('%(dir)s/b_%(bkt)s_%(date)s_v2.alp'%{'dir':b_out_dir, 'bkt':bkt, 'date':date_str}, header=None)
+
 if __name__ == '__main__':
 
     parser = OptionParser()
@@ -314,4 +396,7 @@ if __name__ == '__main__':
         if alphas:
             alphas = pandas.DataFrame([[a.strip(),uni] for a in alphas.split(',')], columns=['alpha_file', 'universe_n'])
         requeue_alphas(uni, opts.freq, opts.max_n, alphas)
+
+        if uni=='npxchnpak':#currently, only backfill bucket alphas for npxchnpak, alpha_v5
+            backfill_b_alphas(univ=uni)
 
