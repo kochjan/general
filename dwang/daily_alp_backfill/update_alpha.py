@@ -29,8 +29,7 @@ e.g.
 import os
 import pp
 import sys
-
-
+os.environ['ALPHADIR'] = '/research/production_alphas/daily/current/npxchnpak/'
 import glob
 import shutil
 import pandas
@@ -38,6 +37,8 @@ import datetime
 from optparse import OptionParser
 
 sys.path.insert(0, '/home/dwang/git_new/')# record_alpha is not in nipun_shared yet, so use my local files first
+import nipun.alphagen.alpha_combine as ac
+import nipun_task.derived.gen_icscaling as gi
 import nipun_task.site_config as site_config
 import nipun_task.utility.record_alpha as ra
 import nipun.dbc as dbc
@@ -295,12 +296,12 @@ def requeue_alphas(univ, freq, max_n=None, alphas_i=None):
     return
 
 
-def backfill_b_alphas(weights_date=None, buckets=['analyst', 'fmom', 'industry', 'iu', 'quality', 'sentiment', 'special', 'value'], univ='npxchnpak', alpha='alpha_v5', startdate=datetime.datetime(2005,1,1), enddate=datetime.datetime.today(), model = 'ase1jpn'):
+def backfill_b_alphas(weights_date=None, buckets=['analyst', 'fmom', 'industry', 'iu', 'quality', 'sentiment', 'special', 'value'], univ='npxchnpak', alpha='alpha_v5', startdate=datetime.datetime(2005,1,1), enddate=datetime.datetime.today(), model = 'ase1jpn', ncpus=8, freq='daily'):
     """
     this function is to calculate bucket alphas based on the latest backfilled
     raw alphas
     """
-
+    print "start to backfill bucket alphas eq_all and eq_c"
     if weights_date is None:
         ctry_wt_df = dbo.query("select * from alphagen..country_wt__%s"%alpha, df=True)
         alpha_wt_df = dbo.query("select * from alphagen..alpha_wt__%s"%alpha, df=True)
@@ -314,30 +315,38 @@ def backfill_b_alphas(weights_date=None, buckets=['analyst', 'fmom', 'industry',
     alpha_wt_df = alpha_wt_df[['bucket_name', 'alpha_name']]
     bucket_alpha_df = pandas.merge(alpha_wt_df, ctry_wt_df, on=['alpha_name'], how='left')
 
+    job_server = pp.Server(ncpus)
+    jobs = []
     for date in pandas.DateRange(startdate, enddate, offset=pandas.datetools.day):
         ctry_df = pandas.DataFrame(lb.loadrsk2(model, 'S', date, daily=True)['COUNTRY'])
         univ_df = lb.load_production_universe(univ, date)
         for bkt in buckets:
             bkt_df = bucket_alpha_df[bucket_alpha_df['bucket_name']==bkt]#.drop(labels=['bucket_name'], axis=1)
             bkt_df = bkt_df.pivot(index='country', columns='alpha_name', values='weight')
-            backfill_1b(date, bkt, bkt_df, ctry_df=ctry_df, univ_df=univ_df)
+            #backfill_1b(date, bkt, bkt_df, ctry_df=ctry_df, univ_df=univ_df, dir=DIR)
+            jobs.append(job_server.submit(backfill_1b, (date, bkt, bkt_df, univ, alpha, freq, model, ctry_df, univ_df, DIR), (), ('pandas', 'datetime', 'os')))
 
-def backfill_1b(date, bkt, bkt_df, univ='npxchnpak', alpha='alpha_v5', freq='daily', model = 'ase1jpn', ctry_df=None, univ_df=None):
+
+    for job in jobs:
+        job()
+
+    job_server.print_stats()
+
+def backfill_1b(date, bkt, bkt_df, univ='npxchnpak', alpha='alpha_v5', freq='daily', model = 'ase1jpn', ctry_df=None, univ_df=None, dir=None):
     """
     backfill one bucket
     """
+    import nipun.cpa.load_barra as lb
+    #import pandas.util.py3compat as py3compat
+    
     print "backfill bucket %s for %s"%(bkt, date)
     
     date_str = date.strftime('%Y%m%d')
     keep_alphas = bkt_df.abs().sum()
     keep_alphas = keep_alphas[keep_alphas>0].index.tolist()
     bkt_df = bkt_df[keep_alphas]
-    
-    ALPHA_DIR = '%(dir)s/%(freq)s/current/'%{'dir':DIR, 'freq':freq}
-    b_out_dir = "%s/%s/%s/"%(ALPHA_DIR, univ, 'b_'+bkt)
 
-    if not os.path.exists(b_out_dir):
-        os.makedirs(b_out_dir)
+    ALPHA_DIR = '%(dir)s/%(freq)s/current/'%{'dir':dir, 'freq':freq}
 
     big_df = pandas.DataFrame()
     for alpha in keep_alphas:
@@ -350,11 +359,21 @@ def backfill_1b(date, bkt, bkt_df, univ='npxchnpak', alpha='alpha_v5', freq='dai
             big_df[alpha] = None
 
     #the v1 def. for bucket alphas
+    b_out_dir = "%s/%s/%s/"%(ALPHA_DIR, univ, 'b_'+bkt+'_eq_all')
+
+    if not os.path.exists(b_out_dir):
+        os.makedirs(b_out_dir)
+        
     output_df = big_df.fillna(0).mean(axis=1)
-    output_df.to_csv('%(dir)s/b_%(bkt)s_%(date)s_v1.alp'%{'dir':b_out_dir, 'bkt':bkt, 'date':date_str})
+    output_df.to_csv('%(dir)s/b_%(bkt)s_eq_all_%(date)s.alp'%{'dir':b_out_dir, 'bkt':bkt, 'date':date_str})
 
     #the v2 def.
     #add country into big_df
+    b_out_dir = "%s/%s/%s/"%(ALPHA_DIR, univ, 'b_'+bkt+'_eq_c')
+
+    if not os.path.exists(b_out_dir):
+        os.makedirs(b_out_dir)
+    
     if ctry_df is None:
         ctry_df = pandas.DataFrame(lb.loadrsk2(model, 'S', date, daily=True)['COUNTRY'])
     if univ_df is None:
@@ -370,7 +389,34 @@ def backfill_1b(date, bkt, bkt_df, univ='npxchnpak', alpha='alpha_v5', freq='dai
             keep_alphas = keep_alphas[keep_alphas>0].index.tolist()
             output_df2 = pandas.concat([output_df2, pandas.DataFrame(v[keep_alphas].fillna(0).mean(axis=1))])
         
-    output_df2.to_csv('%(dir)s/b_%(bkt)s_%(date)s_v2.alp'%{'dir':b_out_dir, 'bkt':bkt, 'date':date_str}, header=None)
+    output_df2.to_csv('%(dir)s/b_%(bkt)s_eq_c_%(date)s.alp'%{'dir':b_out_dir, 'bkt':bkt, 'date':date_str}, header=None)
+
+def backfill_b_1d(date):
+    """
+    this function is to backfill the bucket signals defined in the production env for 1 day.
+    """
+    sys.path.insert(0, '/home/dwang/git_new/')
+    import nipun.alphagen.alpha_combine as ac
+    import nipun_task.derived.gen_icscaling as gi
+    
+    gi.PREALPHA_DIR = '/home/dwang/work/alpha_files/prealpha'
+    gi.run(date - datetime.timedelta(1), 'npxchnpak')
+    
+    AC_o = ac.AlphaCombination(mname='alpha_v5', date=date, risk_model='ASE1JPN', production=False, opt_pth='/research/production_alphas/daily/current/npxchnpak/', output_b_only=True, exclude_otypes=[])
+    AC_o.run(univ='npxchnpak', userpath='/home/dwang/work/alpha_files/prealpha/', country_std=True)
+
+def backfill_b_alphas2(startdate=datetime.datetime(2005,1,1), enddate=datetime.datetime.today(), ncpus=12):
+    """
+    this function is to backfill the bucket signals defined in the production env for 1 day.
+    """
+    job_server = pp.Server()
+    jobs = []
+    for date in pandas.DateRange(startdate, enddate, offset=pandas.datetools.day):
+        jobs.append(job_server.submit(backfill_b_1d, (date,), (), ('pandas', 'datetime')))
+
+    for job in jobs:
+        job()
+    job_server.print_stats()
 
 if __name__ == '__main__':
 
@@ -395,8 +441,12 @@ if __name__ == '__main__':
         print 'processing alphas for %s' % uni
         if alphas:
             alphas = pandas.DataFrame([[a.strip(),uni] for a in alphas.split(',')], columns=['alpha_file', 'universe_n'])
+            
         requeue_alphas(uni, opts.freq, opts.max_n, alphas)
 
         if uni=='npxchnpak':#currently, only backfill bucket alphas for npxchnpak, alpha_v5
+            print "going to generate eq_all and eq_c bucket alphas"
             backfill_b_alphas(univ=uni)
+            print "going to generate production def. bucket alphas"
+            backfill_b_alphas2()
 
