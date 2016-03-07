@@ -24,6 +24,9 @@ e.g.
 
 4. for testing ongoing run: python update_alpha.py --univ='npxchnpak' --freq='daily' --start_date='20150601'
 5. for testing manual run: python update_alpha.py --univ='npxchnpak' --freq='daily' --start_date='20150601' --alphas='xxx,xxx,xxx'
+
+Note: for example, if you run this code on 03/04/2016, it may generate some alphas or bucket alphas for 20160304. pls ignore those files, they are not accurate.
+20160304 files should be generated on 03/05/2016.
 '''
 
 import os
@@ -217,10 +220,10 @@ def requeue_alphas(univ, freq, max_n=None, alphas_i=None):
     DEBUG_DIR = '%(dir)s/%(freq)s/debug/'%{'dir':DIR, 'freq':freq}
     if freq=='daily':    
         t_delta = pandas.datetools.day
-        copy_dates = pandas.DateRange(td - pandas.datetools.week, td, offset=pandas.datetools.day) # copy .alp files for all dates in copy_dates
+        copy_dates = pandas.DateRange(td - pandas.datetools.week, td - t_delta, offset=pandas.datetools.day) # copy .alp files for all dates in copy_dates
         the_date = td # determine_alphas
         prev_date = the_date - pandas.datetools.week # determine_alphas
-        stop_date = td if opts.stop_date is None else opts.stop_date #in run_alpha
+        stop_date = td - t_delta if opts.stop_date is None else opts.stop_date #in run_alpha
     elif freq=='monthly':
         #ALPHA_DIR = '/research/production_alphas/monthly/current/' 
         #DEBUG_DIR = '/research/production_alphas/monthly/debug/'
@@ -296,7 +299,7 @@ def requeue_alphas(univ, freq, max_n=None, alphas_i=None):
     return
 
 
-def backfill_b_alphas(weights_date=None, buckets=['analyst', 'fmom', 'industry', 'iu', 'quality', 'sentiment', 'special', 'value'], univ='npxchnpak', alpha='alpha_v5', startdate=datetime.datetime(2005,1,1), enddate=datetime.datetime.today(), model = 'ase1jpn', ncpus=8, freq='daily'):
+def backfill_b_alphas(weights_date=None, buckets=['analyst', 'fmom', 'industry', 'iu', 'quality', 'sentiment', 'special', 'value'], univ='npxchnpak', alpha='alpha_v5', startdate=datetime.datetime(2005,1,1), enddate=datetime.datetime.today() - pandas.datetools.day, model = 'ase1jpn', ncpus=8, freq='daily'):
     """
     this function is to calculate bucket alphas based on the latest backfilled
     raw alphas
@@ -405,11 +408,11 @@ def backfill_b_1d(date):
     AC_o = ac.AlphaCombination(mname='alpha_v5', date=date, risk_model='ASE1JPN', production=False, opt_pth='/research/production_alphas/daily/current/npxchnpak/', output_b_only=True, exclude_otypes=[])
     AC_o.run(univ='npxchnpak', userpath='/home/dwang/work/alpha_files/prealpha/', country_std=True)
 
-def backfill_b_alphas2(startdate=datetime.datetime(2005,1,1), enddate=datetime.datetime.today(), ncpus=12):
+def backfill_b_alphas2(startdate=datetime.datetime(2005,1,1), enddate=datetime.datetime.today() - pandas.datetools.day, ncpus=8):
     """
     this function is to backfill the bucket signals defined in the production env for 1 day.
     """
-    job_server = pp.Server()
+    job_server = pp.Server(ncpus)
     jobs = []
     for date in pandas.DateRange(startdate, enddate, offset=pandas.datetools.day):
         jobs.append(job_server.submit(backfill_b_1d, (date,), (), ('pandas', 'datetime')))
