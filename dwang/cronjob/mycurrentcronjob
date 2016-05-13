@@ -1,0 +1,61 @@
+# m h  dom mon dow   command
+#################################################################
+#backup task tables
+0 0 * * * source /home/dwang/.bashrc 2>/dev/null; /home/dwang/git_root/general/dwang/daily_failures/copy_task_tables.py > /home/dwang/git_root/general/dwang/daily_failures/copy_task_table.log
+#################################################################
+
+
+#################################################################
+#download social data
+0 6 * * 5 /home/dwang/work/chn_similar_stks/cronjob/y_baidu
+0 7 * * 5 /home/dwang/work/chn_similar_stks/cronjob/y_eastmoney
+0 8 * * 5 /home/dwang/work/chn_similar_stks/cronjob/y_sina
+0 5 * * 1-5 /home/dwang/work/chn_similar_stks/cronjob/y_hexun_rank
+0 9 * * 1-5 /home/dwang/work/chn_similar_stks/cronjob/y_wearn_rank
+##################################################################
+
+
+##################################################################
+#update daily current alpha files
+31 16 * * 5 source /home/dwang/.bashrc 2>/dev/null; /home/dwang/work/alpha_files/code/update_alpha.py --univ=npxchnpak --freq=daily --start_date=20050101 > /home/dwang/work/alpha_files/log/log.log
+##################################################################
+
+
+
+##################################################################
+0 19 * * 2-6 source /home/dwang/.bashrc 2>/dev/null; /home/dwang/work/jsf/code/downloader.py > /home/dwang/work/jsf/log/log.log
+
+
+##################################################################
+#download HK local analyst data
+0 15 * * 1-5 source /home/dwang/.bashrc 2>/dev/null; /home/dwang/git_root/general/dwang/data_sourcing/HK_broker/kgi.py  --db --email --stdout > /dev/null
+5 15 * * 1-5 source /home/dwang/.bashrc 2>/dev/null; /home/dwang/git_root/general/dwang/data_sourcing/HK_broker/poems1.py  --db --email --stdout > /dev/null
+10 15 * * 1-5 source /home/dwang/.bashrc 2>/dev/null; /home/dwang/git_root/general/dwang/data_sourcing/HK_broker/poems2.py  --db --email --stdout > /dev/null
+15 15 * * 1-5 source /home/dwang/.bashrc 2>/dev/null; /home/dwang/git_root/general/dwang/data_sourcing/HK_broker/citics.py  --db --forceall --email --stdout > /dev/null
+20 15 * * 1-5 source /home/dwang/.bashrc 2>/dev/null; /home/dwang/git_root/general/dwang/data_sourcing/HK_broker/dbs.py  --db --email --stdout > /dev/null
+25 15 * * 1-5 source /home/dwang/.bashrc 2>/dev/null; /home/dwang/git_root/general/dwang/data_sourcing/HK_broker/utrade.py  --db --email --stdout > /home/dwang/test/utrade.log
+30 15 * * 1-5 source /home/dwang/.bashrc 2>/dev/null; /home/dwang/git_root/general/dwang/data_sourcing/HK_broker/cpy.py  --db --email --stdout > /dev/null
+35 15 * * 1-5 source /home/dwang/.bashrc 2>/dev/null; /home/dwang/git_root/general/dwang/data_sourcing/HK_broker/publicsec.py  --db --email --stdout > /dev/null
+40 15 * * 1-5 source /home/dwang/.bashrc 2>/dev/null; /home/dwang/git_root/general/dwang/data_sourcing/HK_broker/abci.py  --db --email --stdout > /dev/null
+###################################################################
+
+###################################################################
+#download twn commodity data
+0 16 * * 1-5 source /home/dwang/.bashrc 2>/dev/null; /home/dwang/git_root/general/dwang/data_sourcing/twn_commodity/twn_comm_ind.py > /dev/null
+5 16 * * 1-5 source /home/dwang/.bashrc 2>/dev/null; /home/dwang/git_root/general/dwang/data_sourcing/twn_commodity/twn_comm_prod.py > /home/dwang/git_root/general/dwang/data_sourcing/twn_commodity/twn_comm_prod.log
+###################################################################
+
+##################################################################
+#download chn A social data from xueqiu
+05 16 * * * source /home/dwang/.bashrc 2>/dev/null; /home/dwang/git_root/general/dwang/data_sourcing/xueqiu/xueqiu1.py > /home/dwang/git_root/general/dwang/data_sourcing/xueqiu/xueqiu1.log
+##################################################################
+
+##################################################################
+#download Brazilian bovespa BTC and RLC data
+19 14 * * * source /home/dwang/.bashrc 2>/dev/null; /home/dwang/git_root/general/dwang/em/brazil/bovespa.py > /home/dwang/git_root/general/dwang/em/brazil/log.log
+
+##################################################################
+#download PHL exchange foreign flow data
+24 16 * * * source /home/dwang/.bashrc 2>/dev/null; /home/dwang/git_root/general/dwang/data_sourcing/pse/phl_stock_ex.py > /home/dwang/git_root/general/dwang/data_sourcing/pse/log.log
+09 13 * * * source /home/dwang/.bashrc 2>/dev/null; /home/dwang/git_root/general/dwang/data_sourcing/idx/idx_forflow.py > /home/dwang/git_root/general/dwang/data_sourcing/idx/log.log
+

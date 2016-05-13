@@ -19,9 +19,9 @@ def fn_generater():
     generate the interal file id for today's download
     """
 
-    sql_max_date = """select top 1 datadate, file_name from %(table)s order by datadate DESC"""%{'table':TABLE}
+    sql_max_date = """select top 1 datadate, file_name from %(table)s order by datadate DESC, file_name DESC"""%{'table':TABLE}
     df = dbo.query(sql_max_date, df=True)
-    
+    #import pdb; pdb.set_trace()
     if df and len(df)>0:
         datadate_last = df['datadate'].values[0]
         year = (datadate_last + dt.timedelta(1)).year
@@ -135,6 +135,10 @@ def main(internal_fn_orig=None):
         df = parser(pdf_fn)
         time.sleep(10)
         if df and len(df)>0:
+            sql_del = """delete from %(table)s where file_name='%(file_name)s'"""%{'table':TABLE, 'file_name':internal_fn}
+            dbo.cursor.execute(sql_del)
+            dbo.commit()
+            
             sql_io.write_frame(df, TABLE, if_exists='append', bulk='off')
             empty_df_count = 0
             datadate = df['datadate'][0]
