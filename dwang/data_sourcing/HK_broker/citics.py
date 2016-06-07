@@ -16,7 +16,7 @@ class Citics(WebScraper):
     def __gen_list__(self):
 
         tmp_list=[]
-        base_url = 'http://simchigw.infocastfn.com/gate/gb/iportal.infocastfn.com/citiccapital_portal/res/exp.asp?LangId=3&LStkCode=&LStkName=&LECBroker=&Lpage='
+        base_url = 'http://simchigw.infocastfn.com/gate/gb/iportal.infocastfn.com/citiccapital_portal/res/exp.asp?LangId=1&LStkCode=&LStkName=&LECBroker=&Lpage='
         for i in xrange(1,31):
             tmp_list.append(base_url+str(i))
         return tmp_list
@@ -32,16 +32,18 @@ class Citics(WebScraper):
             ticker = re.search('\((\d+)\)', tds[2].text).groups()[0]
             recommendation = tds[3].text
             rec_price = tds[4].text.split('$')[-1]
+            source = 'citics/' + tds[5].text.split(':')[-1].strip()
             tgt_price = tds[6].text.split('$')[-1]
             datadate = re.search('>(\d+\/\d+\/\d+)<', str(tds[7])).groups()[0]
             datadate = dt.datetime.strptime(datadate, '%m/%d/%Y')
-            tmp_l.append([datadate, ticker, 'recommendation', recommendation])
-            tmp_l.append([datadate, ticker, 'recommend price', rec_price])
-            tmp_l.append([datadate, ticker, 'target price', tgt_price])
+            nominal_price = tds[8].text.split('$')[-1]
+            tmp_l.append([datadate, ticker, 'recommendation', recommendation, source])
+            tmp_l.append([datadate, ticker, 'recommend price', rec_price, source])
+            tmp_l.append([datadate, ticker, 'target price', tgt_price, source])
+            tmp_l.append([datadate, ticker, 'nominal price', nominal_price, source])
         
-        
-        self.res_df = pd.DataFrame(tmp_l, columns=['datadate', 'ticker', 'category', 'value'])
-        self.res_df['source'] = 'citics'
+        self.res_df = pd.DataFrame(tmp_l, columns=['datadate', 'ticker', 'category', 'value','source'])
+        #self.res_df['source'] = 'citics'
         self.res_df['last_modification'] = dt.datetime.today().strftime('%Y-%m-%d %H:%M:%S')
         self.res_df['sm_localid'] = self.res_df['ticker'].apply(lambda x: 'HK'+str(int(x)))
 
