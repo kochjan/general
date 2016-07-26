@@ -8,39 +8,60 @@ run_all
 parse_page
 upload_to_DB
 """
-
+import codecs
 from web_scraper import *
+def getEntryData(entry, fieldName):
+    try:
+        dat = entry.find('span',{'class':fieldName}).text.split(u'\xa0')[-1].strip()
+    except:
+        dat = ''
+    return dat
+    
+infolist = ['sector','status','sector-area','sector-name','stock-code','target-price','m-cap']
 
+    
 class Dbs(WebScraper):
 
     def __gen_list__(self):
-
-        base_url = 'http://www.dbs.com.hk/treasures/aics/gridchild.page?country=hk&sector=all&recommentation=all&search=&start='
-        return [base_url+str(i) for i in xrange(1,15+1)]
+        sess = requests.Session()
+        sess.get('https://www.dbs.com.hk/treasures/aics/grid.page', verify=False)
+        req = sess.post('http://www.dbs.com.hk/treasures/aics/gridchild.page', verify=False,
+            data={'country':'hk', 'sector':'all', 'recommentation':'all', 'start':0,'search':'','pageNum':1,'clsVal':''})  
+        soupCurr = BeautifulSoup(req.content)
+        pageTotal=len(soupCurr.find('div',{'class':'pagination'}).findAll('a',{'href':'#'}))-2
+        self.session = sess
+        base_url = 'https://www.dbs.com.hk/treasures/aics/gridchild.page?start='
+        return [base_url+str(i) for i in xrange(1,pageTotal+1)]
         
-    ## def scrape_sig_page(self, i):
-        
-##         base_url = 'https://www.dbs.com.hk/treasures/aics/gridchild.page'
-##         return requests.post(base_url, data={'country':'hk', 'sector':'all', 'recommentation':'all', 'start':i}).content
+    def scrape_sig_page(self, url):
+        base_url = 'https://www.dbs.com.hk/treasures/aics/gridchild.page'
+        i = url.split("=")[-1]
+        page = self.session.post(base_url, data={'country':'hk', 'sector':'all', 'recommentation':'all', 'search':'','start':i}, verify=False)
+        #'submit':'true','componentID':'1432599052736',         
+        return page.content
 
     def parse_page(self):
 
         rec_map = {'OW':'Overweight', 'N':'Neutral', 'UW':'Underweight', 'FV': 'Fully Valued'}
         tmp_l = []
         s = BeautifulSoup(self.page_str)
-        divs=s.findAll('div', {'class':"stocks-popover"})
-        
-        for div in divs:
-            ticker = div.find('span', {'class':"stock-code"}).text.replace('Stock Code','').replace(':', '').replace(u'\xa0', '').strip()
-            if 'HK' in ticker:
-                ticker = ticker.replace('HK','').replace('.', '')
-            else:
-                self.res_df=pd.DataFrame()
-                return
+        with codecs.open('bs.out','w', 'utf-8') as f:
+            f.write(s.prettify())
             
-            recommendation = rec_map[div.find('span', {'class':"status"}).text]
-            tgt_price = div.find('span', {'class':"target-price"}).text.replace('Target Price:','').replace('HK','').replace('$','').strip()
-            time_per = div.find('span', {'class':"time-estimate"}).text.replace('Time:', '').strip()
+        entries=s.findAll('div', {'class':"stocks-popover"})
+        
+        for entry in entries:
+            entryData = map(lambda x: getEntryData(entry, x), infolist)
+            data = dict(zip(infolist, entryData))
+            ticker = data.get("stock-code")
+            if 'HK' in ticker:
+                ticker = ticker.replace('.HK','')
+            else:
+                continue
+            
+            recommendation = rec_map[data.get("status")]
+            tgt_price = data.get("target-price").replace('HK$','').strip() # default is HK$
+            time_per = data.get("time-estimate")
             
             datadate = dt.datetime.combine(dt.datetime.today(), dt.time())
             tmp_l.append([datadate, ticker, 'recommendation', recommendation])
@@ -60,12 +81,11 @@ class Dbs(WebScraper):
 
 if __name__ == '__main__':
     
-    try:
-        opts, args = parse()
-        obj = Dbs(opts.stdout)
-        obj.run_all(opts.db, opts.forceall)
-    finally:
-        if opts.email: obj.email()       
-            
+    opts, args = parse()
+    obj = Dbs(opts.stdout)
+    obj.run_all(opts.db, opts.forceall)
+    if opts.email: 
+        obj.email()       
+        
 
         
