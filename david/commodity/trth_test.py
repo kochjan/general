@@ -10,13 +10,13 @@ PRICE = 'dsargent.commodity_intraday_v2'
 REF = 'dsargent.commodity_refdata_v3'
 
 price_windows = [
-#    ('W', 5, 30),
-#    ('KW', 5, 30),
-#    ('C', 5, 20),
-#    ('S', 5, 20),
-#    ('SM', 5, 20),
-#    ('BO', 5, 20), 
-    ('SB', 5, 10),
+    ('W', 5, 30),
+    ('KW', 5, 30),
+    ('C', 5, 20),
+    ('S', 5, 20),
+    ('SM', 5, 20),
+    ('BO', 5, 20), 
+    ('SB', 10, 5),
     ('CC', 5, 10),
     ('KC', 5, 10),
     ('CT', 5, 10),
@@ -35,7 +35,7 @@ price_windows = [
     ('FC', 5, 15)
 ]
 
-
+#price_windows = [('SB', 2, 2)]
 
 def load_meta(ric):
     sql = '''
@@ -97,9 +97,11 @@ def load_data(ric, buy_nminute, sell_nminute):
     if len(sd) != 1: raise
     sd = sd[0]
 
+
+
     data = compute_returns(data)
 
-    data.set_index('datadate', inplace=True)
+#    data.set_index('datadate', inplace=True)
     
     refdata = load_meta(ric)
     cvalue = refdata['contract_value'].values[0]
@@ -112,16 +114,14 @@ def load_data(ric, buy_nminute, sell_nminute):
     
     data['daily_notional'] = data['contract_size'] * data['open_volume'] / 1e6
 
-    data = data.reset_index()
     if sd:
         data = data[['datadate', 'ric', 'prev_open', 'close_price', 'overnight_return', 'intraday_return', 'close_volume', 'prev_open_volume']]
         data = data.rename(columns={'prev_open': 'open_price', 'prev_open_volume':'open_volume'})
     else:
         data = data[['datadate', 'ric', 'open_price', 'close_price', 'overnight_return', 'intraday_return', 'close_volume', 'open_volume']]
     
-    data = data.dropna()
-
-    sl.write_frame(data, 'dsargent.commodity_returns', if_exists='append', user='gce-data')
+    data = data.dropna().reset_index(drop=True)
+    sl.write_frame(data, 'dsargent.commodity_returns_v3', if_exists='append', user='gce-data')
     return
 
 
@@ -141,6 +141,7 @@ def compute_returns(data, pick_priority=1):
     data = data.reset_index()
     data = data.sort(['ric', 'datadate'])
 
+
     if sd[0] == 1:
         data['prev_open'] = data['open_price'].shift(1)
         data['prev_open_volume'] = data['open_volume'].shift(1)
@@ -159,6 +160,10 @@ def compute_returns(data, pick_priority=1):
         data['intraday_return'] = data['close_price'] / data['prev_open'] - 1.0
         data.pop('prev_ric')
 
+        ix = data['prev_open_volume'].notnull() & data['close_volume'].notnull()
+        data = data[ix]
+        data = data.sort(['datadate', 'prev_open_volume'])
+
     else:
         data['lag_close'] = data['close_price'].shift(1)
         data['lag_ric'] = data['ric'].shift(1)
@@ -167,10 +172,11 @@ def compute_returns(data, pick_priority=1):
         data['intraday_return'] = data['close_price'] / data['open_price'] - 1.0
         data.pop('lag_ric')
 
-    ix = data['open_volume'].notnull() & data['close_volume'].notnull()
-    data = data[ix]
-    data = data.sort(['datadate', 'open_volume'])
+        ix = data['open_volume'].notnull() & data['close_volume'].notnull()
+        data = data[ix]
+        data = data.sort(['datadate', 'open_volume'])
 
+    return data
 
     for k in range(pick_priority):
         tmp = data.drop_duplicates(['datadate'], take_last=True)
