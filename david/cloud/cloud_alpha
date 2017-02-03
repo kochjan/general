@@ -1,0 +1,147 @@
+#!/opt/python2.7/bin/python
+
+import os
+from git import *
+from git.exc import InvalidGitRepositoryError
+
+import json
+import datetime
+import subprocess
+from optparse import OptionParser
+from dateutil.parser import parse as dtparse
+
+VERSION = 17
+LATEST_IMAGE = 'gcr.io/nipun-950-core/cjs-testingv2:{}'.format(VERSION)
+ALPHA_COMMAND = '/cloudtools/alpha_runner.py'
+OUTNAME = 'jobcfg.json'
+
+
+def __commit_msg(files):
+    repls = {
+        'date': datetime.datetime.today().strftime('%Y%m%d%H%M%S'), \
+        'files': ",".join(files)
+    }
+    return """alpha run - {date} - {files}""".format(**repls)
+
+
+def __load_repo(pth):
+    try:
+        repo = Repo(pth)
+    except InvalidGitRepositoryError:
+        print pth, 'repo not found?!'
+        return None
+
+    return repo
+
+def get_file_dirs(repo_dir, fname):
+
+    cwd = os.getcwd()
+    if cwd == repo_dir:
+        return fname
+
+    fname_append = replace(repo_dir, '')
+    return '/'.join([fname_append, fname])
+
+
+
+def get_repo_obj():
+
+    repo = __load_repo('.')
+    if repo is None:
+        i = 1
+        while True:
+            repo_pth = '/'.join(['..'] * i)
+            repo = __load_repo(repo_pth)
+            if repo:
+                return repo
+            else:
+                i += 1
+            
+            if i == 5:
+                raise ValueError('No repository found!')
+
+    return repo
+
+
+def git_commiter(repo, files):
+    
+    print 'adding: ', files
+    repo.index.add(files)
+    print 'committing:', files
+    repo.index.commit(__commit_msg(files))
+    print 'pushing'
+    
+    origin = repo.remote('origin')
+    origin.push()
+    print 'done'
+    
+
+
+def generate_config(start, stop, file_name, tag, daily):
+    """Generate a config json for job 
+
+    Args:
+        start (datetime): the start date
+        stop (datetime): the stop date
+        daily (bool): run monthly or daily
+        file_name (str): the filename to submit
+        tag (str): job tag
+        daily (bool): daily flag
+    """
+
+
+    repo = get_repo_obj()
+
+    name = tag
+    image = LATEST_IMAGE
+    command = ["python", ALPHA_COMMAND, "--file", file_name]
+    if daily:
+        command.append('--daily')
+
+    task_gen = {
+        "type": 'month', \
+        "params": {"start_date": start.strftime('%Y-%m'), \
+                  "end_date":stop.strftime('%Y-%m')},
+        "requests": {"cpu":"1", "memory":"500Mi"}
+    }
+
+    json_command = dict(name=tag, image=image, command=command, taskgen=task_gen)
+   
+    ### always put in root directory to keep clean 
+    fh = file(repo.working_dir + '/' + OUTNAME, 'w')
+    fh.write(json.dumps(json_command, sort_keys=True, indent=4))
+    fh.close()
+
+    repo_fname = get_file_dirs(repo.working_dir, file_name)
+    file_list = [OUTNAME, repo_fname]
+    git_commiter(repo, file_list)
+
+    
+def main():
+
+    parser = OptionParser()
+    parser.add_option('--start', dest='start', default=None, help='start date')
+    parser.add_option('--stop', dest='stop', default=None, help='stop date')
+    parser.add_option('--file', dest='file', default=None, help='file to run')
+    parser.add_option('--tag', dest='tag', default='job1', help='job tag')
+    parser.add_option('--daily', dest='daily', default=False, action='store_true', help='run_daily')
+
+    opts, args = parser.parse_args()
+    if opts.start is not None:
+        start_date = dtparse(opts.start)
+    else:
+        raise ValueError('missing start date!')
+
+    if opts.stop is not None:
+        stop_date = dtparse(opts.stop)
+    else:
+        raise ValueError('must specify stop date')
+
+    if opts.file is None:
+        raise ValueError('must provide file!')
+
+    generate_config(start_date, stop_date, opts.file, opts.tag, opts.daily)
+
+
+if __name__ == '__main__':
+    main()

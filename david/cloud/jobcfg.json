@@ -1,0 +1,22 @@
+{
+    "command": [
+        "python", 
+        "/cloudtools/alpha_runner.py", 
+        "--file", 
+        "my_test.py", 
+        "--daily"
+    ], 
+    "image": "gcr.io/nipun-950-core/cjs-testingv2:17", 
+    "name": "upd2016", 
+    "taskgen": {
+        "params": {
+            "end_date": "2016-06", 
+            "start_date": "2016-01"
+        }, 
+        "requests": {
+            "cpu": "1", 
+            "memory": "500Mi"
+        }, 
+        "type": "month"
+    }
+}

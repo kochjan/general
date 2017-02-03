@@ -334,6 +334,7 @@ def backfill_b_alphas(weights_date=None, buckets=['analyst', 'fmom', 'industry',
         job()
 
     job_server.print_stats()
+    job_server.destroy()
 
 def backfill_1b(date, bkt, bkt_df, univ='npxchnpak', alpha='alpha_v5', freq='daily', model = 'ase1jpn', ctry_df=None, univ_df=None, dir=None):
     """
@@ -398,6 +399,8 @@ def backfill_b_1d(date):
     """
     this function is to backfill the bucket signals defined in the production env for 1 day.
     """
+    print "generating prod buck alphas for %s"%date
+    
     sys.path.insert(0, '/home/dwang/git_new/')
     import nipun.alphagen.alpha_combine as ac
     import nipun_task.derived.gen_icscaling as gi
@@ -412,6 +415,7 @@ def backfill_b_alphas2(startdate=datetime.datetime(2005,1,1), enddate=datetime.d
     """
     this function is to backfill the bucket signals defined in the production env for 1 day.
     """
+    print "going to generate production def. bucket alphas"
     job_server = pp.Server(ncpus)
     jobs = []
     for date in pandas.DateRange(startdate, enddate, offset=pandas.datetools.day):
@@ -420,6 +424,7 @@ def backfill_b_alphas2(startdate=datetime.datetime(2005,1,1), enddate=datetime.d
     for job in jobs:
         job()
     job_server.print_stats()
+    job_server.destroy()
 
 if __name__ == '__main__':
 
@@ -450,6 +455,6 @@ if __name__ == '__main__':
         if uni=='npxchnpak':#currently, only backfill bucket alphas for npxchnpak, alpha_v5
             print "going to generate eq_all and eq_c bucket alphas"
             backfill_b_alphas(univ=uni)
-            print "going to generate production def. bucket alphas"
+
             backfill_b_alphas2()
 

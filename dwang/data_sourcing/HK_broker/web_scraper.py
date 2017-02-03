@@ -10,6 +10,8 @@ import numpy as np
 from optparse import OptionParser
 import sys
 from nipun.mailer import mail_me
+import time
+
 
 sql_str = """select barrid, localid, datadate as startdate, isnull(stopdate, '2050-01-01') as stopdate from nipun_prod..security_master where listed_country = 'HKG'"""
 dbo = dbc.db(connect='qai')
@@ -120,7 +122,7 @@ class WebScraper(object):
         raise Exception('you need to write a function to check if new records are there')
 
     def run_all(self, DB=False, force_all=False):
-
+        
         for url in self.list:
             self.prt('-'*77)
             self.prt(url)
@@ -168,8 +170,8 @@ class WebScraper(object):
         if not self.stdout:
             with open(self.outputdir+self.__class__.__name__+'.log', 'r') as f:
                 log = f.read()
-            mail_me(['ding.wang@nipuncapital.com'], self.__class__.__name__, log)
+            mail_me(['weijing.zhu@nipuncapital.com'], self.__class__.__name__, log)
         else:
-            mail_me(['ding.wang@nipuncapital.com'], self.__class__.__name__, 'error urls:\n'+str(self.url_wrong_l))#log)
+            mail_me(['weijing.zhu@nipuncapital.com'], self.__class__.__name__, 'error urls:\n'+str(self.url_wrong_l))#log)
 
     
