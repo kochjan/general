@@ -4,7 +4,13 @@ import pandas
 import datetime
 
 def run(date):
-
+    print date
+    '''
+    create DF composed of:
+        - 3 monthly forward returns
+        - past year monthly returns
+        - past month daily returns
+    '''
     pred_month = ret.monthly_returns(date+pandas.datetools.MonthEnd(), lookback=0)
     pred_month.set_index('BARRID', inplace=True)
 
@@ -44,6 +50,7 @@ def run(date):
     data = pandas.merge(monthly, daily, left_index=True, right_index=True, how='inner')
     data = pandas.merge(data, pdata, left_index=True, right_index=True, how='inner')
 
+    # remove synthetic barrids, indicated by 3rd letter Q: USQxxxx
     ix = [x[2] != 'Q' for x in data.index]
     data = data.ix[ix]
 

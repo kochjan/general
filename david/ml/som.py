@@ -1,5 +1,5 @@
 
-# Code from Chapter 9 of Machine Learning: An Algorithmic Perspective
+# Code from Chapter 9 1st Edition (Ch 14 of 2nd Edit) of Machine Learning: An Algorithmic Perspective
 # by Stephen Marsland (http://seat.massey.ac.nz/personal/s.r.marsland/MLBook.html)
 
 # You are free to use, change, or redistribute the code in any way you wish for
@@ -10,7 +10,7 @@
 
 
 from numpy import *
-
+DEBUG = True
 class som:
 	"""A Basic 2D Self-Organising Map
 	The map connections can be initialised randomly or with PCA"""
@@ -54,13 +54,14 @@ class som:
 				for j in range(i+1,self.x*self.y):
 					self.mapDist[i,j] = sqrt((self.map[0,i] - self.map[0,j])**2 + (self.map[1,i] - self.map[1,j])**2)
 					self.mapDist[j,i] = self.mapDist[i,j]
-				
+
 	def somtrain(self,inputs,nIterations):
 		self.eta_binit = self.eta_b
 		self.eta_ninit = self.eta_n
 		self.nSizeinit = self.nSize
 
 		for iterations in range(nIterations):
+			if DEBUG: print '.', iterations
 			for i in range(self.nData):
 				#print inputs[i,:]
 				best,activation = self.somfwd(inputs[i,:])
