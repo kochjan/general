@@ -100,7 +100,7 @@ def run_me(date, models):
 
     print 'correlation:'
     print data[['FRET_F1', 'FRET_F2', 'FRET_F3', 'gbd', 'gbm', 'gbc']].corr()
-    # export ALPHADIR=/home/wzhu/github/general/david/ml/pmom_models/
+    # export ALPHADIR=/home/wzhu/gitme/general/david/ml/pmom_models/
     nu.write_alpha_files(data['gbd'], 'ml_pmom_monthly_gbd', date)
     nu.write_alpha_files(data['gbm'], 'ml_pmom_monthly_gbm', date)
     nu.write_alpha_files(data['gbc'], 'ml_pmom_monthly_gbc', date)

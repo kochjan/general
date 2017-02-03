@@ -4,7 +4,7 @@ import datetime
 import nipun.cpa.load_barra as lb
 
 import sys
-sys.path.insert(0,'/home/wzhu/github/general/david/ml/')
+sys.path.insert(0,'/home/wzhu/gitme/general/david/ml/')
 import som
 
 DEBUG = True
