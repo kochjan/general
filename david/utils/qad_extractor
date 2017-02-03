@@ -1,0 +1,39 @@
+#!/opt/python2.7/bin/python2.7
+
+import sys
+import nipun.dbc as dbc
+
+dbo =dbc.db(connect='qai')
+
+curs = dbo.cursor
+
+input_file = sys.argv[1]
+output_file = sys.argv[2]
+fetchsize = 10000
+skip_header = True
+delimiter = '\t'
+nulls = ''
+
+fh = file(input_file,'r')
+sql = fh.read()
+outfh = file(output_file, 'w')
+
+curs.execute(sql)
+curs.arraysize = fetchsize
+
+def make_clean(v):
+	if v is None:
+		return nulls
+	return str(v)
+
+while True:
+    rs = curs.fetchmany(fetchsize)
+    if not rs:
+        break
+
+    for row in rs:
+        c = delimiter.join(make_clean(t) for t in row)+'\n'
+        outfh.write(c)
+
+outfh.close()
+sys.exit()
