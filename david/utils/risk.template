@@ -1,0 +1,222 @@
+
+#################################################################################
+# parameter file for cpa
+#################################################################################
+#################################################################################
+#
+DEBUG = False
+#
+# begin and end date for analysis
+BYYYYMM = 199701
+EYYYYMM = 199703
+#
+# universe: either points to universe files, or use ESTU for barra estimation universe
+# universe = /opt/data/barra/montly/abcYYYYMM
+#
+UNIVERSE = npxchnpak
+#
+#################################################################################
+#################################################################################
+# Set analysis type
+# ANALYSIS_MODE = INDUSTRY/COUNTRY/STOCK/PORTFOLIO
+ANALYSIS_MODE_WEIGHT = SQRTCAPT
+#################################################################################
+#################################################################################
+#
+ANALYSIS_MODE = STOCK
+#
+#################################################################################
+#################################################################################
+# Axioma portfolio information: only used when ANALYSIS_MODEL = PORTFOLIO
+# NAV_BOM_DATE = CALENDER/BUSINESS
+# use [yyyymmdd] for calender month end dates
+# use [byyyymmdd] for business month end dates
+#################################################################################
+#################################################################################
+#
+AXIOMA_PORTFOLIO = /opt/data/user/pooja/backtest2/results/bktest_cpa/cpa-Bktest1-[yyyymmdd].csv
+AXIOMA_NAV = /opt/data/user/pooja/backtest2/results/bktest_cpa/cpa-portfolioDetails-RA-Bktest1.csv
+NAV_BOM_DATE = CALENDER
+#
+#################################################################################
+#################################################################################
+# Factor information 
+#################################################################################
+#################################################################################
+# factor configuaration file: list factors and type (country, risk, etc)
+FACTORCONFIG = /opt/nipun_shared/nipun/cpa/ASE1SJPN.config
+#FACTORCONFIG = /opt/nipun_shared/nipun/cpa/GEM2S.config
+#
+#
+# DROP_: factors that we don't want in the covariance matrix
+# leave as blank if you don't want to drop any factors
+#
+DROP_CURRENCY = CHNC MYSC CANC EMUC GBRC USAC
+DROP_INDUSTRY = 
+#CHNENERGY CHNOTHMAT CHNMTLSMIN CHNCAPGOODS CHNTRANSPRT CHNCONSDIS CHNCSHU CHNFINANC CHNREALEST CHNTECH 
+DROP_COUNTRY = CHN JPN
+DROP_RISK =
+# VOLATILI EAEVOL LIQUIDIT
+#MOMENTUM EAEMOM JPNMOM EADMOM PACMOM SEAMOM CHNMOM
+#MOMENTUM EAEMOM JPNMOM EADMOM PACMOM SEAMOM 
+# MOMENTUM EAEMOM EADMOM PACMOM JPNMOM SEAMOM SASMOM CHNMOM
+# VALUE MOMENTUM
+#VALUE MOMENTUM
+#MOMENTUM EAEMOM EADMOM
+# MOMENTUM JPNMOM
+#MOMENTUM EAEMOM EADMOM PACMOM JPNMOM SEAMOM SASMOM CHNMOM
+#MOMENTUM PACMOM EADMOM EAEMOM JPNMOM SEAMOM SASMOM
+FULL_COV = False
+# VALUE MOMENTUM
+#MOMENTUM PACMOM SEAMOM SASMOM EAEMOM EADMOM JPNMOM CHNMOM
+# list of valid countries:AUS CHN CHX HKG IND IDN JPN KOR MYS 
+#                         NZL PAK PHL SGP TWN THA 
+# DROP_ASSETS_COUNTRY: drop all stocks from those countries in the analysis
+# REPLACE_ASSETS_COUNTRY: replace alphas by 0 
+REPLACE_ASSETS_COUNTRY =
+#DROP_ASSETS_COUNTRY =  CHN PAK IND
+DROP_ASSETS_COUNTRY = PAK IND 
+#CHX HKG IDN MYS NZL PHL SGP KOR THA TWN CHN JPN
+################################################################################
+# Barra model information
+#################################################################################
+#################################################################################
+#
+BARRA_MODEL = ASE1JPN
+#PN
+BARRA_HORIZON = S
+#
+#
+#########################################################################
+#########################################################################
+# alpha information
+# use [yyyymmdd] for calender month end dates
+# use [byyyymmdd] for business month end dates
+########################################################################
+########################################################################
+#
+# alpha name
+#
+ALPHANAME =
+#
+#ALPHA_FILE = /research/alphagen/alpha_v5/[alpha]/[alpha]_[yyyymmdd].alp
+ALPHA_FILE = /research/data/alpha/[alpha]/[alpha]_[yyyymmdd].alp
+#ALPHA_FILE = /research/data/alpha/chinaa/[alpha]/[alpha]_[yyyymmdd].alp
+#ALPHA_FILE = /production/daily_alphas/npxchnpak/alphas/[alpha]/[alpha]_[yyyymmdd].alp
+#ALPHA_FILE = /production/daily_alphas/npxchnpak/alphagen/alpha_v5/[alpha]/[alpha]_[yyyymmdd].alp
+#ALPHA_FILE = /research/production_alphas/daily/current/npxchnpak/[alpha]/[alpha]_[yyyymmdd].alp
+ALPHA_OFFSET = 0
+#
+# winsorize alphas?  True or False
+#
+WINSORIZE_ALPHA = True
+#
+# neutralize alphas?  True or False
+#    if True, set NEUTRALIZE_BY = COUNTRY or INDUSTRY
+#    if True, set NEUTRALIZE_RISK_FACTOR = "Barra risk factors"
+
+NEUTRALIZE_ALPHA = False
+NEUTRALIZE_BY = INDUSTRY
+NEUTRALIZE_RISK_FACTOR =
+#SIZE LEVERAGE
+#PACMOM,EADMOM,SEAMOM,JPNMOM,EAEMOM
+#NEUTRALIZE_ALPHA = False
+#NEUTRALIZE_BY =
+#NEUTRALIZE_RISK_FACTOR = 
+#EUTRALIZE_RISK_FACTOR = MOMENTUM PACMOM JPNMOM EADMOM EAEMOM SEAMOM SASMOM SIZE PACSIZE JPNSIZE EADSIZE EAESIZE SEASIZE SASSIZE
+NEUTRALIZE_RISK_FACTOR = 
+# MOMENTUM PACMOM JPNMOM EADMOM EAEMOM SEAMOM SASMOM
+#NEUTRALIZE_RISK_FACTOR = SIZE JPNSIZE
+#
+# set missing alphas to 0 or drop assets from universe
+# and if replace missing by 0, do it before or after neutralization/winsorization?
+# set missing alphas to 0, False = drop assets from universe
+#
+REPLACE_ALPHA_BEFORE = False
+REPLACE_ALPHA_AFTER  = False
+#
+#########################################################################
+#########################################################################
+# return information
+#########################################################################
+#########################################################################
+#
+# put in replacement value for missing returns.  Recommended treatment is to put 0
+#
+MISSING_RET = 0
+MINRET = -0.98
+MAXRET = 3.0
+#
+# return horizon
+#
+NHORIZON = 6
+#
+# ret offset: use 0 for normal cpa, use -N for N period lead (or peek ahead) analysis
+#
+RETURN_OFFSET = 0
+#
+#
+#########################################################################
+#########################################################################
+# bucket information
+#########################################################################
+#########################################################################
+#
+# number of buckets?
+#
+NBUCKETS = 10
+#
+# what are the Barra factor buckets?
+#
+#BUCKETS = 
+#INDNAME COUNTRY SIZE LIQUIDIT VALUE
+#SRISK MOMENTUM VALUE VOLATILI SIZE LIQUIDIT
+BUCKETS = INDNAME SRISK VOLATILI LIQUIDIT MOMENTUM VALUE SIZE COUNTRY
+#CAP_BUCKETS SRISK MOMENTUM VALUE VOLATILI LIQUIDIT
+# SRISK MOMENTUM VALUE VOLATILI LIQUIDIT SIZE
+#VALUE LIQUIDIT SRISK VOLATILI MOMENTUM
+COUNTRY_TC = False
+#
+# what are the user defined buckets?
+#
+#USERBUCKETS = numest adv180 anndate sizeadv_np topbot_np
+#USERBUCKETS = sizeadv_npxchnpak topbot_npxchnpak icscale_npxchnpak 
+USERBUCKETS =
+#ab_sentiment_w
+# hkg_chx_bucket
+#analyst_counts true_vs_coest_surp
+#
+FORWARD_VAR = 
+#twn_high_profit_1d
+FORWARD_PATH =
+
+
+#USER_PATH = /research/data/prealpha/[userbucket]/[userbucket]_[yyyymmdd].alp
+USER_PATH = /research/data/alpha/[userbucket]/[userbucket]_[nyyyymmdd].alp
+#USER_PATH = /home/dsargent/version_control/production/nipun_task/india/outputs/[userbucket]_[yyyymmdd].alp
+#
+#########################################################################
+#########################################################################
+#output information
+#########################################################################
+#########################################################################
+#
+#
+#####################################################################################OUTDIR =  /research/cpa/
+#ml/
+OUTDIR = /production/monthly/201604/barra
+TAG = 
+OUTFILE =
+# create pdf file of summary report
+GENERATE_CHARTS = YES
+OUTPORT = NO
+#OUTID is the identifier used for OUTPORT, use either BARRID or SEDCUS (sedol and cusips)
+OUTID = BARRID
+#OUTFORMAT is the format for OUTPORT, use either panel or ts
+#
+#INC_EXCL = EXCL_UNIVERSE 
+#INC_EXCL_FILE = chn_sse
+#/research/data/alpha/chinaa/chn_losses/chn_losses_[yyyymmdd]
+OUTFORMAT = PANEL
+EMAIL_RESULTS = True
+
