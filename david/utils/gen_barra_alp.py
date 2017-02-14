@@ -4,7 +4,7 @@ import nipun.cpa.load_barra as lb
 
 def run(date):
 
-    alps = ['MOMENTUM', 'LIQUIDIT', 'VALUE', 'GROWTH', 'SIZE', 'VOLATILI', 'LEVERAGE', 'MOMENTUM']
+    alps = ['MOMENTUM', 'LIQUIDIT', 'VALUE', 'GROWTH', 'SIZE', 'VOLATILI', 'LEVERAGE']
     rsk = lb.loadrsk2('ase1jpn', 'S', date, daily=True)
 
     for a in alps:

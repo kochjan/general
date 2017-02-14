@@ -2,9 +2,9 @@
 Self organizing map example 
 
 som_data.py
- * generate input data that will be used later
+ * generate input data for som_training
 som_alpha.py 
- * loads data and builds map 
+ * loads training data, train model by calling som module to build map, and create alphas
 som.py
  * self-organizing map code
 
