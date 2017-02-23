@@ -46,11 +46,21 @@ def load_signals(date):
 
 
 def gen_fwd_returns(data, date, fret=None):
-    
+    '''
+    :param fret: i.e. [5, 10, 20]
+    :return:
+    '''
     window = td.get_trading_dates(date, 1, fdays=20)
+    # trading_days module requires this as an initializer, to define the as_of_date, and the window of days
+
     data = td.filter_df(data, 'DATADATE', 'BARRID')
+    # wrt as_of_date in the td.get_trading_dates initializer,
+    # add a column dt_idx, showing the relative number of days for each datadate:
+    # t0, t1, ... are trailing days
+    # f1, f2 ... are forward days
+
     data = data[data['dt_idx'] != 't0']
-    
+
     data['ndays'] = data['dt_idx'].apply(lambda x: int(x.replace('f','')))
     data['ndays'] = data['ndays'].astype(int)
     data['logret'] = pandas.np.log(1+data[USE_RET])
@@ -67,7 +77,10 @@ def gen_fwd_returns(data, date, fret=None):
     
 
 def gen_pmom_returns(data, date, pmom=None):
-
+    '''
+    :param pmom: ex. [1, 3, 5, 10, 20]
+    :return: df containing short term momemtum columns, and volatility based on data used
+    '''
     window = td.get_trading_dates(date, RET_WINDOW)
 
     data = td.filter_df(data, 'DATADATE', 'BARRID')
@@ -86,7 +99,9 @@ def gen_pmom_returns(data, date, pmom=None):
 
 
 def gen_vol(data, date, window):
-
+    """
+    :return: short-term vol as the z-score of the USDDolVol of each BARRID
+    """
     _ = td.get_trading_dates(date, VOL_WINDOW)
     data = td.filter_df(data, 'datadate', 'BARRID')
     data['ndays'] = data['dt_idx'].apply(lambda x: int(x.replace('t','')))
@@ -103,7 +118,7 @@ def gen_vol(data, date, window):
 
 def run(date):
 
-    ### load forward returns
+    ### load forward returns and recent momentums
     retdata = rets.daily_resrets(date+pandas.datetools.BDay(30), lookback=60+RET_WINDOW)
     fret = gen_fwd_returns(retdata.copy(), date, [5, 10, 20])
     exrets = gen_pmom_returns(retdata.copy(), date, pmom=PMOM_BREAK)
@@ -129,4 +144,5 @@ def run(date):
     data = data[data.index.isin(univ.index)]
     print len(data) 
     gdata.write_gce(data, 'users', 'dsargent/{version}/{dt}.pd'.format(version=VERSION,dt=date.strftime('%Y%m%d')), enable_compression=True)
+
     return 

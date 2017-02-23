@@ -32,12 +32,24 @@ def train(start, stop):
     ### randomly shuffle data
     data = shuffle(data) 
     data = data.dropna()
+    print 'data size'
+    print len(data)
 
     ### if you want to drop a country (jpn?) quickly do it here
 #    data['cnt'] = data['BARRID'].apply(lambda x: x.upper()[:3])
 #    data.pop('cnt')
 
     ### parameters
+    '''
+    params = dict(n_estimators=100, \   #200
+                max_depth=2, \          #3
+                subsample=0.7, \        #0.7
+                random_state=112984, \
+                max_features='sqrt', \
+                min_samples_split=100, \
+                min_samples_leaf=40, \
+                learning_rate=0.05)     #0.05
+    '''
     params = dict(n_estimators=200, \
                 max_depth=3, \
                 subsample=0.7, \
@@ -77,7 +89,7 @@ def run_me(date, models):
     ret['rev'] = ret['RET'] * -1
     nu.write_alpha_files(ret['rev'], 'reversal_1m', date)
     
-    data = pandas.read_csv('pmom/%s.csv' % date.strftime('%Y%m%d'))
+    data = pandas.read_csv('pmom/%s.csv' % date.strftime('%Y%m%d'), index_col=0)
     data = data.dropna()
 
 
@@ -86,7 +98,9 @@ def run_me(date, models):
         data['gbm'] = models['gbrm'].predict_proba(data[MPCOLS])[:,1]
         data['gbc'] = models['gbrc'].predict_proba(data[MPCOLS+DPCOLS])[:,1]
 
+    print 'correlation:'
     print data[['FRET_F1', 'FRET_F2', 'FRET_F3', 'gbd', 'gbm', 'gbc']].corr()
+    # export ALPHADIR=/home/wzhu/gitme/general/david/ml/pmom_models/
     nu.write_alpha_files(data['gbd'], 'ml_pmom_monthly_gbd', date)
     nu.write_alpha_files(data['gbm'], 'ml_pmom_monthly_gbm', date)
     nu.write_alpha_files(data['gbc'], 'ml_pmom_monthly_gbc', date)
@@ -98,3 +112,9 @@ def run(date):
     fh = file('pmom_models/combo_wtd.mdl', 'rb')
     models = cPickle.load(fh)
     run_me(date, models)
+
+'''
+if __name__=='__main__':
+    # run with:  apy pmom.py
+    train(datetime.datetime(2015,1,31), datetime.datetime(2015,7,31))
+'''
