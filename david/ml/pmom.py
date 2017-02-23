@@ -50,8 +50,8 @@ def train(start, stop):
                 min_samples_leaf=40, \
                 learning_rate=0.05)     #0.05
     '''
-    params = dict(n_estimators=50, \
-                max_depth=2, \
+    params = dict(n_estimators=200, \
+                max_depth=3, \
                 subsample=0.7, \
                 random_state=112984, \
                 max_features='sqrt', \

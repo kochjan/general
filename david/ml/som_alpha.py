@@ -100,7 +100,7 @@ def run(date):
     '''
 
     ## input data, number of iterations
-    som1.somtrain(data[use_cols].values, 20)
+    som1.somtrain(data[use_cols].values, 30)
 
     if DEBUG: print 'hood'
     ### model is now trained, walk through each row to get the neighborhood for a given row
