@@ -1,11 +1,4 @@
 #!/opt/anaconda/bin/python
-
-'''
-minor mod from som_train_b:
-train with only the past std (skip the sum return)
-
-'''
-
 import numpy as np
 import pandas as pd
 import datetime
@@ -13,7 +6,7 @@ import pickle
 import som
 import os
 
-COUNTRY_STUDY = None #'TWN'
+COUNTRY_STUDY = 'TWN'
 DEBUG = False #True
 TRAIN_STEPS = 10 if DEBUG else 50
 
@@ -54,12 +47,6 @@ for cty in allpanel.items:
     else:
         dataDF = pd.concat([dataDF, df])
 
-# remove bpbeta
-for col in dataDF.columns:
-    if 'bpbeta' in col:
-        del dataDF[col]
-
-
 def run(date, only_country=None):
     '''
     '''
@@ -84,7 +71,7 @@ def run(date, only_country=None):
     data = data[-ix_today]
 
     # use factor past week return and month stdev, and perhaps epfr or other macro info
-    use_cols = [x for x in data.columns if x.endswith('.sum') or x.endswith('.std')]
+    use_cols = [x for x in data.columns if x.endswith('.std')]
     predict_cols = [x for x in data.columns if x.endswith('fret')]
 
     train_data = data[use_cols]

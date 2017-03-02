@@ -15,7 +15,7 @@ import pickle
 import som
 import os
 
-COUNTRY_STUDY = None #'TWN'
+COUNTRY_STUDY = 'TWN'
 DEBUG = False #True
 TRAIN_STEPS = 10 if DEBUG else 50
 
