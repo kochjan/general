@@ -1,4 +1,4 @@
-#!/home/wzhu/anaconda/bin/python
+#!/opt/anaconda/bin/python
 
 '''
 minor mod from som_train:
@@ -15,7 +15,7 @@ import pickle
 import som
 import os
 
-COUNTRY_STUDY = 'TWN'
+COUNTRY_STUDY = None #'TWN'
 DEBUG = False #True
 TRAIN_STEPS = 10 if DEBUG else 50
 
