@@ -1,4 +1,4 @@
-#!/home/wzhu/anaconda/bin/python
+#!/opt/anaconda/bin/python
 
 # gather the CPA factor return results
 
