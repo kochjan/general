@@ -13,7 +13,7 @@ TRAIN_STEPS = 10 if DEBUG else 50
 BENCHMARK = False
 WINDOW_SIZE = 5 #week
 
-MODEL_NAME = 'som_test1_w5'
+MODEL_NAME = 'som_test1a_w5'
 
 if COUNTRY_STUDY:
     MODEL_NAME += '_'+ COUNTRY_STUDY

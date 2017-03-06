@@ -13,13 +13,18 @@ TRAIN_STEPS = 10 if DEBUG else 50
 BENCHMARK = False
 WINDOW_SIZE = 5 #week
 
-MODEL_NAME = 'som_test2a_w5'
+MODEL_NAME = 'som_test2b_w5'
 
 '''
-strategy 2:
-use a limited number of columns for each forecast:
-each signal should use its past history only
-provide a general context about how the signals perform in the past
+strategy 2: use fewer columns to help focus the training
+
+2a: use .T instead of .sum and .std
+
+2b. add past 3 .T
+
+2c. provide a general context about how the signals perform in the past
+
+2d: each signal should use its past history only:  3 .T
 '''
 
 # define SIGNALS and BARRA list
@@ -82,6 +87,9 @@ def run(date, only_country=None):
     # add common CONTEXT columns: turn barra sum/std into count of good or bad styles and signals
     for factor in SIGNALS + BARRA:
         data[factor+'.T'] = data[factor+'.sum']/data[factor+'.std']
+        # add prev 3 weeks
+        for prev in range(1,4):
+            data['prev{}_'.format(prev)+factor+'.T'] = data[factor+'.T'].shift(prev)
 
 
     # get ready for training
@@ -103,41 +111,37 @@ def run(date, only_country=None):
     print 'N: {}, clumps: {}, grid size chosen: {}'.format(N, clumps, grid)
 
     # training
-    #som_model = {}
-    # Do we want to save these trained models? Not yet. Comment them out
-    for signal in SIGNALS:
-        # use factor past week return and month stdev, and perhaps epfr or other macro info
-        #use_cols = [x for x in data.columns if x.endswith('.sum') or x.endswith('.std')]
-        use_cols = [signal+'.T', ]
 
-        train_data = data[use_cols]
-        train_data = train_data.dropna()
+    # use factor past week return and month stdev, and perhaps epfr or other macro info
+    use_cols = [x for x in data.columns if x.endswith('.T')]
 
-        SOM_X, SOM_Y = grid, grid
-        som1 = som.som(SOM_X, SOM_Y, train_data.values, usePCA=False)
-        #som_model[signal] = som1
+    train_data = data[use_cols]
+    train_data = train_data.dropna()
 
-        ## input data, number of iterations
-        som1.somtrain(train_data.values, TRAIN_STEPS)
+    SOM_X, SOM_Y = grid, grid
+    som1 = som.som(SOM_X, SOM_Y, train_data.values, usePCA=False)
 
-        ### model is now trained, walk through each row to get the neighborhood for a given row
-        data['hood_'+signal] = None
-        for cnt, row in train_data.iterrows():
-            hood, act = som1.somfwd(row.values)
-            data['hood_'+signal].ix[cnt] = hood
-        ### now take todays data, walk through, and place each row in a neighborhood
-        today['hood_'+signal] = None
-        for cnt, row in today[use_cols].iterrows():
-            hood, act = som1.somfwd(row.values)
-            today['hood_'+signal].ix[cnt] = hood
+    ## input data, number of iterations
+    som1.somtrain(train_data.values, TRAIN_STEPS)
 
+    ### model is now trained, walk through each row to get the neighborhood for a given row
+    data['hood'] = None
+    for cnt, row in train_data.iterrows():
+        hood, act = som1.somfwd(row.values)
+        data['hood'].ix[cnt] = hood
+    ### now take todays data, walk through, and place each row in a neighborhood
+    today['hood'] = None
+    for cnt, row in today[use_cols].iterrows():
+        hood, act = som1.somfwd(row.values)
+        today['hood'].ix[cnt] = hood
 
-        ret_col = signal + '.fret'
-        hood_ret = data.groupby('hood_'+signal)[ret_col].median()
+    predict_cols = [x for x in data.columns if x.endswith('fret')]
+    for ret_col in predict_cols:
+        hood_ret = data.groupby('hood')[ret_col].median()
         hood_ret = hood_ret.to_dict()
 
         ### map the return back to securities
-        today['pred_'+ret_col] = today['hood_'+signal].apply(hood_ret.get)
+        today['pred_'+ret_col] = today['hood'].apply(hood_ret.get)
 
     today.to_csv(MODEL_NAME+'/forecast_{:%Y%m%d}.csv'.format(date))
 
