@@ -9,10 +9,10 @@ import os
 COUNTRY_STUDY = 'TWN'
 MODEL_NAME = 'som_stock3b_'+ COUNTRY_STUDY
 
-DEBUG = True
+DEBUG = False
 TRAIN_STEPS = 5 if DEBUG else 50
 GRIDMIN = 3
-GRIDMAX = GRIDMIN if DEBUG else 30
+GRIDMAX = GRIDMIN if DEBUG else 10
 
 
 # create path
