@@ -106,10 +106,12 @@ def run(date):
 
 if __name__ == '__main__':
     from datetime import datetime as dd
-    run(dd(2010, 1, 31))
-    '''
-    #for d in pd.date_range(dd(2008,1,1),dd(2011,12,31)):
+    #run(dd(2010, 1, 31))
+
+    for d in pd.date_range(dd(2008,1,1),dd(2011,12,31), freq='M'):
+        #print(d)
         run(d)
+    '''
         if d.weekday() == 4:
             #run(dd(2010,1,29))
             run(d)
