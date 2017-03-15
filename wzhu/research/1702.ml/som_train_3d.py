@@ -7,7 +7,7 @@ import som
 import os
 
 COUNTRY_STUDY = 'TWN'
-MODEL_NAME = 'som_stock3c_'+ COUNTRY_STUDY
+MODEL_NAME = 'som_stock3d_'+ COUNTRY_STUDY
 
 DEBUG = False
 TRAIN_STEPS = 5 if DEBUG else 50
