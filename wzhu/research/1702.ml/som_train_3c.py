@@ -7,9 +7,10 @@ import som
 import os
 
 COUNTRY_STUDY = 'TWN'
-MODEL_NAME = 'som_stock3c_'+ COUNTRY_STUDY
+MODEL_NAME = 'som_stock3cC_'+ COUNTRY_STUDY
 
 DEBUG = False
+CLUSTERINFO=True
 TRAIN_STEPS = 5 if DEBUG else 50
 GRIDMIN = 3
 GRIDMAX = GRIDMIN if DEBUG else 10
@@ -81,9 +82,23 @@ def run(date):
         data['hood'].ix[cnt] = hood
     ### now take todays data, walk through, and place each row in a neighborhood
     today['hood'] = None
-    for cnt, row in today[use_cols].iterrows():
-        hood, act = som1.somfwd(row.values)
-        today['hood'].ix[cnt] = hood
+
+    if not CLUSTERINFO:
+        for cnt, row in today[use_cols].iterrows():
+            hood, act = som1.somfwd(row.values)
+            today['hood'].ix[cnt] = hood
+    else:
+        today['hood_ct'] = None
+        today['hood_z'] = None
+        today['hood_avg'] = None
+        today['hood_std'] = None
+        for cnt, row in today[use_cols].iterrows():
+            hood, act, csize, czscore, cavg, cstd = som1.somfwd(row.values, clusterSizeFlag=True)
+            today['hood'].ix[cnt] = hood
+            today['hood_ct'].ix[cnt] = csize
+            today['hood_z'].ix[cnt] = czscore
+            today['hood_avg'].ix[cnt] = cavg
+            today['hood_std'].ix[cnt] = cstd
 
 
     if DEBUG: print 'group'
