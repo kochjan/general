@@ -36,7 +36,7 @@ def run(date):
     data = dataDF[dataDF['date'] <= date]
 
     if MAX_LOOKBACK_MONTHS>0:
-        min_ret_date = date - pd.datetools.MonthEnd() * MAX_LOOKBACK_MONTHS
+        min_ret_date = date - pd.tseries.offsets.MonthEnd() * MAX_LOOKBACK_MONTHS
         data = data[data['date'] >= min_ret_date]
 
     #if only_country:
