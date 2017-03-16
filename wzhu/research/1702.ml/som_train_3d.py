@@ -24,7 +24,7 @@ MAX_LOOKBACK_MONTHS = 6 #60
 #SOM_X, SOM_Y = 10, 10 # set dynamically below
 
 #combine all data into single dataframe with date/country as index
-with open('bf.twn.expectAlpha.monthly.train','rb') as infh:
+with open('bf.twn.expectAlpha2.monthly.train','rb') as infh:
     dataDF=pickle.load(infh).reset_index()
 
 def run(date):
@@ -49,8 +49,8 @@ def run(date):
     data = data[-ix_today]
 
     # use factor past week return and month stdev, and perhaps epfr or other macro info
-    use_cols = [x for x in data.columns if x.endswith('TWN')]
-    predict_cols = ['RET',]
+    use_cols = [x for x in data.columns if x.endswith('TWN')] + ['sRET',]
+    predict_cols = ['NextRET',]
 
     train_data = data[use_cols]
     N = len(train_data)
@@ -101,13 +101,8 @@ def run(date):
 
 if __name__ == '__main__':
     from datetime import datetime as dd
-    #run(dd(2010, 1, 31))
-
-    for d in pd.date_range(dd(2008,1,1),dd(2011,12,31), freq='M'):
-        #print(d)
-        run(d)
-    '''
-        if d.weekday() == 4:
-            #run(dd(2010,1,29))
+    if DEBUG:
+        run(dd(2010, 1, 31))
+    else:
+        for d in pd.date_range(dd(2008,1,1),dd(2011,12,31), freq='M'):
             run(d)
-    '''
