@@ -53,7 +53,7 @@ def run(date):
 
     # use factor past week return and month stdev, and perhaps epfr or other macro info
     predict_cols = ['NextRET',]
-    use_cols = [x for x in data.columns if x not in predict_cols]
+    use_cols = [x for x in data.columns if COUNTRY_STUDY in x or x == 'CurrRET']
 
     train_data = data[use_cols]
     N = len(train_data)
