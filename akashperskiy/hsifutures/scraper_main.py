@@ -71,15 +71,40 @@ def generate_hsi_dataframes(url):
 
     categorical_data = []
 
-    long_open_row = {"type": "long_open", "contracts": long_open_contracts, "interest": long_open_interest, "datadate": formatted_date, "created_at": datetime.datetime.today()}
-    short_open_row = {"type": "short_open", "contracts": short_open_contracts, "interest": short_open_interest, "datadate": formatted_date, "created_at": datetime.datetime.today()}
-    ls_turnover_row = {"type": "ls_turnover", "contracts": ls_turnover_contracts, "interest": ls_turnover_interest, "datadate": formatted_date, "created_at": datetime.datetime.today()}
-    long_turnover_row = {"type": "long_turnover", "contracts": long_turnover_contracts, "interest": long_turnover_interest, "datadate": formatted_date, "created_at": datetime.datetime.today()}
-    short_turnover_row = {"type": "short_turnover", "contracts": short_turnover_contracts, "interest": short_turnover_interest, "datadate": formatted_date, "created_at": datetime.datetime.today()}
+    long_open_row = {
+        "type": "long_open", "contracts": long_open_contracts,
+        "interest": long_open_interest, "datadate": formatted_date,
+        "created_at": datetime.datetime.today()
+        }
+    short_open_row = {
+        "type": "short_open", "contracts": short_open_contracts,
+        "interest": short_open_interest, "datadate": formatted_date,
+        "created_at": datetime.datetime.today()
+        }
+    ls_turnover_row = {
+        "type": "ls_turnover", "contracts": ls_turnover_contracts,
+        "interest": ls_turnover_interest, "datadate": formatted_date,
+        "created_at": datetime.datetime.today()
+        }
+    long_turnover_row = {
+        "type": "long_turnover", "contracts": long_turnover_contracts,
+        "interest": long_turnover_interest, "datadate": formatted_date,
+        "created_at": datetime.datetime.today()
+        }
+    short_turnover_row = {
+        "type": "short_turnover",
+        "contracts": short_turnover_contracts, "interest": short_turnover_interest,
+        "datadate": formatted_date, "created_at": datetime.datetime.today()
+        }
 
     categorical_data += [long_open_row, short_open_row, ls_turnover_row, long_turnover_row, short_turnover_row]
 
-    last_three = [{"index_futures_turnover": index_futures_turnover, "cash_market_turnover": cash_market_turnover, "exchange_participants": exchange_participants, "created_at": datetime.datetime.today(), "datadate": formatted_date}]
+    last_three = [{
+        "index_futures_turnover": index_futures_turnover,
+        "cash_market_turnover": cash_market_turnover,
+        "exchange_participants": exchange_participants,
+        "created_at": datetime.datetime.today(), "datadate": formatted_date
+        }]
 
     long_open_participants = [row.find_all("td")[2].text for row in data_list[3:13]]
     short_open_participants = [row.find_all("td")[2].text for row in data_list[15:25]]
@@ -90,11 +115,28 @@ def generate_hsi_dataframes(url):
     participants_data = []
 
     for i in range(10):
-        long_open_row = {"value": p2f(long_open_participants[i]), "type": "long_open", "datadate": formatted_date, "participant": i+1, "created_at": datetime.datetime.today()}
-        short_open_row = {"value": p2f(short_open_participants[i]), "type": "short_open", "datadate": formatted_date, "participant": i+1, "created_at": datetime.datetime.today()}
-        ls_turnover_row = {"value": p2f(ls_turnover_participants[i]), "type": "ls_turnover", "datadate": formatted_date, "participant": i+1, "created_at": datetime.datetime.today()}
-        long_turnover_row = {"value": p2f(long_turnover_participants[i]), "type": "long_turnover", "datadate": formatted_date, "participant": i+1, "created_at": datetime.datetime.today()}
-        short_turnover_row = {"value": p2f(short_turnover_participants[i]), "type": "short_turnover", "datadate": formatted_date, "participant": i+1, "created_at": datetime.datetime.today()}
+        long_open_row = {
+            "value": p2f(long_open_participants[i]), "type": "long_open",
+            "datadate": formatted_date, "participant": i+1, "created_at": datetime.datetime.today()
+            }
+        short_open_row = {
+            "value": p2f(short_open_participants[i]), "type": "short_open",
+            "datadate": formatted_date, "participant": i+1,
+            "created_at": datetime.datetime.today()
+            }
+        ls_turnover_row = {
+            "value": p2f(ls_turnover_participants[i]), "type": "ls_turnover",
+            "datadate": formatted_date, "participant": i+1,
+            "created_at": datetime.datetime.today()
+            }
+        long_turnover_row = {
+            "value": p2f(long_turnover_participants[i]), "type": "long_turnover",
+            "datadate": formatted_date, "participant": i+1,
+            "created_at": datetime.datetime.today()
+            }
+        short_turnover_row = {"value": p2f(short_turnover_participants[i]),
+            "type": "short_turnover", "datadate": formatted_date,
+            "participant": i+1, "created_at": datetime.datetime.today()}
         participants_data += [long_open_row, short_open_row, ls_turnover_row, long_turnover_row, short_turnover_row]
 
     participants_df = pd.DataFrame(data=participants_data)
