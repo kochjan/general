@@ -17,7 +17,6 @@ import pandas as pd
 from bs4 import BeautifulSoup
 import dateutil
 import datetime
-import nipun.sql_io as sl
 
 SCRAPING_URL = "https://www.hkex.com.hk/eng/stat/dmstat/sharedata.htm"
 
@@ -29,45 +28,63 @@ def format_quantity(quantity):
 
 """
 Arguments: url - the url of the hkex cache or original site containing hsi share data.
-
 Returns: participants_df - dataframe for participants
          categorical_df - dataframe for interests and contracts
          last_three_df - dataframe for last three aggregated values
 """
-def generate_hsi_dataframes(url):
+def generate_hsi_dataframes(url, year=None, both=False):
     req = requests.get(url)
     dom = BeautifulSoup(req.text,'html.parser')
 
     table = dom.find('table', class_="ms-rteTable-1")
     data_list = table.find_all("tr")
+    week2partic, week2categorical, week2three = generate_hsi_dataframes_from_data(data_list, 2, year=year)
+    if both:
+        week1partic, week1categorical, week1three = generate_hsi_dataframes_from_data(data_list, 1, year=year)
+        participants_df = pd.concat([week1partic, week2partic])
+        categorical_df = pd.concat([week1categorical, week2categorical])
+        last_three_df = pd.concat([week1three, week2three])
+        return participants_df, categorical_df, last_three_df
+    else:
+        return week2partic, week2categorical, week2three
 
-    date = data_list[0].find_all("td")[2].text
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
 
+def generate_hsi_dataframes_from_data(data_list, x, year=None):
+    date = data_list[0].find_all("td")[x].text
     split_index = date.index("-")
     end_date = date[split_index+1:].strip()
-
-    year = (datetime.datetime.today() - pd.tseries.offsets.BDay(3)).year
+    if is_number(end_date):
+        month = date.split()[1]
+        end_date = month + " " + end_date
+    if year is None:
+        year = (datetime.datetime.today() - pd.tseries.offsets.BDay(3)).year
     formatted_date = dateutil.parser.parse(end_date)
-    formatted_date.replace(year)
+    formatted_date = formatted_date.replace(year=int(year))
 
-    long_open_contracts = format_quantity(data_list[1].find_all("td")[2].text)
-    long_open_interest = p2f(data_list[2].find_all("td")[2].text)
+    long_open_contracts = format_quantity(data_list[1].find_all("td")[x].text)
+    long_open_interest = p2f(data_list[2].find_all("td")[x].text)
 
-    short_open_contracts = format_quantity(data_list[13].find_all("td")[2].text)
-    short_open_interest = p2f(data_list[14].find_all("td")[2].text)
+    short_open_contracts = format_quantity(data_list[13].find_all("td")[x].text)
+    short_open_interest = p2f(data_list[14].find_all("td")[x].text)
 
-    ls_turnover_contracts = format_quantity(data_list[25].find_all("td")[2].text)
-    ls_turnover_interest = p2f(data_list[26].find_all("td")[2].text)
+    ls_turnover_contracts = format_quantity(data_list[25].find_all("td")[x].text)
+    ls_turnover_interest = p2f(data_list[26].find_all("td")[x].text)
 
-    long_turnover_contracts = format_quantity(data_list[37].find_all("td")[2].text)
-    long_turnover_interest = p2f(data_list[38].find_all("td")[2].text)
+    long_turnover_contracts = format_quantity(data_list[37].find_all("td")[x].text)
+    long_turnover_interest = p2f(data_list[38].find_all("td")[x].text)
 
-    short_turnover_contracts = format_quantity(data_list[49].find_all("td")[2].text)
-    short_turnover_interest = p2f(data_list[50].find_all("td")[2].text)
+    short_turnover_contracts = format_quantity(data_list[49].find_all("td")[x].text)
+    short_turnover_interest = p2f(data_list[50].find_all("td")[x].text)
 
-    index_futures_turnover = format_quantity(data_list[61].find_all("td")[2].text)
-    cash_market_turnover = p2f(data_list[62].find_all("td")[2].text)
-    exchange_participants = int(data_list[63].find_all("td")[2].text)
+    index_futures_turnover = format_quantity(data_list[61].find_all("td")[x].text)
+    cash_market_turnover = p2f(data_list[62].find_all("td")[x].text)
+    exchange_participants = int(data_list[63].find_all("td")[x].text)
 
     categorical_data = []
 
@@ -106,11 +123,11 @@ def generate_hsi_dataframes(url):
         "created_at": datetime.datetime.today(), "datadate": formatted_date
         }]
 
-    long_open_participants = [row.find_all("td")[2].text for row in data_list[3:13]]
-    short_open_participants = [row.find_all("td")[2].text for row in data_list[15:25]]
-    ls_turnover_participants = [row.find_all("td")[2].text for row in data_list[27:37]]
-    long_turnover_participants = [row.find_all("td")[2].text for row in data_list[39:49]]
-    short_turnover_participants = [row.find_all("td")[2].text for row in data_list[51:61]]
+    long_open_participants = [row.find_all("td")[x].text for row in data_list[3:13]]
+    short_open_participants = [row.find_all("td")[x].text for row in data_list[15:25]]
+    ls_turnover_participants = [row.find_all("td")[x].text for row in data_list[27:37]]
+    long_turnover_participants = [row.find_all("td")[x].text for row in data_list[39:49]]
+    short_turnover_participants = [row.find_all("td")[x].text for row in data_list[51:61]]
 
     participants_data = []
 
