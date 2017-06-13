@@ -70,6 +70,10 @@ class TWSE:
             if err.encode('utf-8') == "查無資料":
                 print 'stock id %s invalid' % stock_id
                 return None
+            elif err.encode('utf-8') == "驗證碼錯誤!":
+                print 'captcha verification failed, requeued stock %s' % stock_id
+                self.stock_ids.append(stock_id)
+                return None
             elif err != "":
                 print u'unknown error %s' % err
                 return None
