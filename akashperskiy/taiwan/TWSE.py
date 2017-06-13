@@ -21,6 +21,7 @@ import pandas as pd
 import os
 import datetime
 import dateutil
+import progressbar
 
 class TWSE:
     def __init__(self, stock_ids):
@@ -70,7 +71,7 @@ class TWSE:
                 print 'stock id %s invalid' % stock_id
                 return None
             elif err != "":
-                self.stock_ids.append(stock_id)
+                print u'unknown error %s' % err
                 return None
         except AttributeError:
             self.stock_ids.append(stock_id)
@@ -82,10 +83,14 @@ class TWSE:
         df = pd.read_csv(buf, encoding = 'utf8')
         req = self.rs.get(self.base_url + self.csv_page + "?v=t")
         dom = BeautifulSoup(req.text, 'html.parser')
-        self.date = dateutil.parser.parse(dom.find('td', {'id':'receive_date'}).text)
+        date_ele = dom.find('td', {'id':'receive_date'})
+        if date_ele is not None:
+            self.date = dateutil.parser.parse(date_ele.text)
         return df
 
     def stock_enumeration(self):
+        bar = progressbar.ProgressBar(max_value=len(self.stock_ids))
+        i = 0
         while len(self.stock_ids) > 0:
             stock_id = self.stock_ids.pop(0)
             self.captcha = Image.open(io.BytesIO(self.get_captcha(self.get_captcha_src())))
@@ -95,6 +100,8 @@ class TWSE:
             if df is not None:
                 df = self.reshape_df(df)
                 self.data[stock_id] = df
+                i += 1
+                bar.update(i)
             self.rs = requests.session()
         return self.combine_data(self.data)
 
