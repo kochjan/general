@@ -18,7 +18,7 @@ from sqlalchemy import create_engine
 
 def main():
     stock_list = pd.read_excel('http://dataeshop.twse.com.tw/frontend/en/product/downloadsampleFile.jsp?downloadfile=ECBIXLS/Z00_ECBI.xls')
-    twse = TWSE.TWSE(list(stock_list['ECBI'])[3:])
+    twse = TWSE.TWSE(list(stock_list['ECBI'])[1:])
     df = twse.stock_enumeration()
     engine = create_engine("mysql://nipun:Nipun123@130.211.136.197:3306/artur?charset=utf8")
     df.to_sql('twse_brokers', engine, if_exists="append", index=False)
