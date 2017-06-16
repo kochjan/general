@@ -13,13 +13,16 @@
 ######################################################################
 
 import pandas as pd
+import requests
 import dateutil
 from sqlalchemy import create_engine
+import urllib
 
 TRANSACTIONS_URL = "http://dataeshop.twse.com.tw/frontend/en/product/downloadFile.jsp?ptid=A06&samplefile=ex-Excel-E.xls"
 
 def generate_ten_minute_buckets():
-    df = pd.read_excel(TRANSACTIONS_URL)
+    urllib.urlretrieve(TRANSACTIONS_URL, "twse_transactions.xls")
+    df = pd.read_excel("twse_transactions.xls")
     df.columns = df.iloc[[0]].as_matrix()[0]
     df = df.iloc[1:]
     sums = df[df.columns[-7:]].astype(float).groupby(df.index//62).agg('sum')
