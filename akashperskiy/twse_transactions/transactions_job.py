@@ -1,3 +1,17 @@
+#!/opt/python2.7/bin/python
+######################################################################
+## Copyright (c) Nipun Capital, L.P., 2011-2017.  All rights reserved.
+##
+## CONFIDENTIAL
+##
+## This unpublished material is proprietary to Nipun Capital, L.P.
+## The algorithms, methods, techniques and information disclosed or
+## described herein are trade secrets and/or confidential information
+## owned by Nipun Capital, L.P.  Any use, reproduction or
+## distribution, in whole or in part, is prohibited, except by express
+## written permission of Nipun Capital, L.P.
+######################################################################
+
 import pandas as pd
 import dateutil
 from sqlalchemy import create_engine
