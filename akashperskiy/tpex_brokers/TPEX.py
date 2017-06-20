@@ -22,6 +22,7 @@ import pandas as pd
 import os
 import datetime
 import dateutil
+import progressbar
 
 class TPEX:
     def __init__(self, stock_ids):
@@ -55,7 +56,19 @@ class TPEX:
             }
         resp = self.rs.post(self.base_url, data = payload)
         dom = BeautifulSoup(resp.text, 'html.parser')
+        error_div = dom.find("div", {"class": "v-pnl pt10"})
+        if error_div is not None:
+            err_code = error_div.find("p").text.encode('latin1')
+            if err_code == u" ***該股票該日無交易資訊*** ".encode('utf-8'):
+                print "stock id invalid: %s" % stock_id
+                return None
+            elif err_code == u" ***驗證碼錯誤，請重新查詢。*** ".encode('utf-8'):
+                print "captcha misspelled: requeued %s" % stock_id
+                self.stock_ids.append(stock_id)
+                return None
         div = dom.find("div", {"class": "clearfix pt5 bg-warning"})
+        if div is None:
+            return None
         data = re.findall(r"'([^']*)'" , div.find_all('button')[0]['onclick'])
         resp = self.rs.get(self.csv_url_factory(data[0], data[1], data[2], data[3]))
         date_str = str(data[1])
@@ -74,6 +87,8 @@ class TPEX:
         return df
 
     def stock_enumeration(self):
+        i = 0
+        pbar = progressbar.ProgressBar(max_value= len(self.stock_ids))
         while len(self.stock_ids) > 0:
             stock_id = self.stock_ids.pop(0)
             try:
@@ -82,6 +97,8 @@ class TPEX:
                 processed_captcha = self.ocr.preprocess(self.captcha)
                 prediction = self.ocr.captcha_predict(processed_captcha)
                 df = self.payload_once(enname, prediction, stock_id)
+                i += 1
+                pbar.update(i)
                 if df is not None:
                     df = self.reshape_df(df)
                     self.data[stock_id] = df
