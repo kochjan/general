@@ -22,7 +22,6 @@ import pandas as pd
 import os
 import datetime
 import dateutil
-import progressbar
 
 class TPEX:
     def __init__(self, stock_ids):
@@ -87,8 +86,6 @@ class TPEX:
         return df
 
     def stock_enumeration(self):
-        i = 0
-        pbar = progressbar.ProgressBar(max_value= len(self.stock_ids))
         while len(self.stock_ids) > 0:
             stock_id = self.stock_ids.pop(0)
             try:
@@ -97,8 +94,6 @@ class TPEX:
                 processed_captcha = self.ocr.preprocess(self.captcha)
                 prediction = self.ocr.captcha_predict(processed_captcha)
                 df = self.payload_once(enname, prediction, stock_id)
-                i += 1
-                pbar.update(i)
                 if df is not None:
                     df = self.reshape_df(df)
                     self.data[stock_id] = df

@@ -20,7 +20,7 @@ def main():
     sl_df = pd.read_html("http://isin.twse.com.tw/isin/e_C_public.jsp?strMode=4")
     stock_list_df = sl_df[0]
     stock_list_df = stock_list_df[pd.notnull(stock_list_df[stock_list_df.columns[4]])]
-    stock_ids = list(df[df.columns[0]].apply(lambda x: x[:4]))[1:]
+    stock_ids = list(stock_list_df[stock_list_df.columns[0]].apply(lambda x: x[:4]))[1:]
     tpex = TPEX(stock_ids)
     result_df = tpex.stock_enumeration()
     engine = create_engine("mysql://nipun:Nipun123@130.211.136.197:3306/artur?charset=utf8")
