@@ -69,3 +69,6 @@ def main():
     master_df['listed_h_shares'] = master_df['listed_h_shares'].apply(clean_data_no_space)
     master_df['listed_companies'] = master_df['listed_companies'].apply(clean_data_no_space)
     #TODO put master_df.tosql statement here.
+
+if __name__ == "__main__":
+    main()
