@@ -23,7 +23,7 @@ def create_df(lst=None):
 def create_df_from_data(data):
     name_list = ["", "", "hk_main", "hk_gem", "shanghai_a", "shanghai_b", "shenzhen_a", "shenzhen_b"]
     df = create_df()
-    dt = dateutil.parser.parse(re.search("\((.*)\)", data.pop(0)['td'][1][0]).groups()[0])
+    dt = datetime.datetime.strptime(re.search("\((.*)\)", data.pop(0)['td'][1][0]).groups()[0].strip(), "%d/%m/%Y")
     data.pop(0)
     for posx in range(1,4):
         for posy in range(2):
